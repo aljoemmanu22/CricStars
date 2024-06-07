@@ -2,24 +2,28 @@ import React, { useState } from 'react';
 import SummaryContent from './SummaryContent';
 import ScoreCard from './ScoreCard';
 import Commentry from './Commentry';
+import CricHeros from './CricHeros';
+import MVP from './MVP';
+import Teams from './Teams'
+import LiveScore from './LiveScore'
 
 function MatchDetails() {
   const [selectedSection, setSelectedSection] = useState('summary');
 
   const renderSection = () => {
     switch (selectedSection) {
-      case 'summary':
-        return <SummaryContent />;
+      case 'live':
+        return <LiveScore />;
       case 'scorecard':
         return <ScoreCard />
       case 'commentary':
         return <Commentry />
       case 'cricheros':
-        return <div>Cricheros Content</div>;
+        return <CricHeros />
       case 'mvp':
-        return <div>MVP Content</div>;
+        return <MVP />
       case 'teams':
-        return <div>Teams Content</div>;
+        return <Teams />
       default:
         return <div>Summary Content</div>;
     }
@@ -56,7 +60,7 @@ function MatchDetails() {
               <p className='my-4 pl-4'>Baiju's Cricket Academy won by 1 wickets</p>
               <div className='h-12 w-full bg-slate-200 rounded-b-lg border-t flex justify-center items-center'>
                 <nav className='flex justify-around w-full'>
-                  <button className={selectedSection === 'summary' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('summary')}>Summary</button>
+                  <button className={selectedSection === 'live' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('live')}>Live</button>
                   <button className={selectedSection === 'scorecard' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('scorecard')}>Scorecard</button>
                   <button className={selectedSection === 'commentary' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('commentary')}>Commentary</button>
                   <button className={selectedSection === 'cricheros' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('cricheros')}>Cricheros</button>

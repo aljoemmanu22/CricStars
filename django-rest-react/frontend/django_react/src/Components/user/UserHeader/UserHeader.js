@@ -68,11 +68,13 @@ function UserHeader() {
           />
         </Link>
         <ul className="hidden lg:flex justify-end flex-1 pr-14">
-          <li className="px-1">
-            <a href="/live-matches" className="px-2 font-sans font-semibold text-sm text-slate-600">
-              LIVE MATCHES
-            </a>
-          </li>
+          <button onClick={() => {navigate('/user-cordinator-home')}}>
+            <li className="px-1">
+              <p className="px-2 font-sans font-semibold text-sm text-slate-600">
+                Match Coordinator
+              </p>
+            </li>
+          </button>
           {username && (
             <li className="px-1">
               <a href="/past-matches" className="px-2 font-sans font-semibold text-sm text-slate-600">

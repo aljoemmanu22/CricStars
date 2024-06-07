@@ -169,97 +169,101 @@ const handleVerify = async (e) => {
 
   return (
     <>
-      <div className='flex flex-col lg:flex-row justify-between h-screen border-t-2 border-neutral-900 sm:bg-[url("images/smloginBack1.jpeg")] sm:bg-cover sm:bg-center'>
-        <div className='sm:hidden lg:flex bg-red-800 flex-col items-center justify-center flex-grow'>
-          <img className="h-64 w-64" src='images/hBatter.png' alt='Home batter' />
-        </div>
+      <div className='relative h-screen'>
+  <video autoPlay loop muted className='absolute top-0 left-0 w-full h-full object-cover'>
+    <source src="images/MainBackground.mp4" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+  <div className='relative flex flex-col lg:flex-row items-center justify-center h-full border-t-2 border-neutral-900'>
+    {/* <div className='sm:hidden lg:flex flex-col items-center justify-center flex-grow'>
+      <img className="h-64 w-64" src='images/hBatter.png' alt='Home batter' />
+    </div> */}
 
-        <div className='bg-null flex flex-col justify-center items-center w-full lg:w-auto lg:mx-6 mb-32'>
-          <img className="h-64 w-64 mt-10 sm:hidden" src="images/hBat.png" alt="Baseball Bat" />
-          <p className='mt-32 font-semibold text-2xl lg:text-4xl text-center sm:text-white'>Welcome to cricStars</p>
-          <div className='flex items-center mt-8 w-full'>
-            <hr className="border-t-2 border-gray-400 w-1/4 lg:w-1/2" />
-            <p className='text-center w-1/2 lg:w-96 sm:text-white'>CONTINUE WITH</p>
-            <hr className="border-t-2 border-gray-400 w-1/4 lg:w-1/2" />
-          </div>
-          <div className='w-full px-6'>
-            <form onSubmit={handleCheckUser} className='mt-6'>
-              <label className='text-xs sm:text-white'>Mobile Number</label>
-              <div className='mt-3'>
-                <input
-                  className='border-b-2 w-full'
-                  type="tel"
-                  placeholder="Enter Number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
-                />
-              </div>
-              {formError && <p className="error text-red-500">{formError}</p>}
-              {phoneError && <p className="error text-red-500">{phoneError}</p>}
-              <button type="submit" disabled={isLoading} className={`text-xs text-white mt-3 p-1 rounded ${isNewUser ? 'bg-red-500' : (isNewUser === false ? 'bg-green-500' : 'bg-blue-500')}`}>
-                Check User
-              </button>
-            </form>
-          </div>
-          <div className='w-full lg:w-1/2 px-6'>
-            {isNewUser && (
-              <form onSubmit={handleSubmit}>
-                <label className='text-xs sm:text-white'>Your Name</label>
-                <div className='mt-3'>
-                  <input
-                    className='border-b-2 w-full'
-                    type="text"
-                    placeholder="Name"
-                    value={first_name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                {nameError && <p className="error text-red-500">{nameError}</p>}
-                <button type="submit" disabled={isLoading} className="mt-3 p-1 rounded bg-red-500 text-white">
-                  Send OTP
-                </button>
-              </form>
-            )}
-          </div>
-          <div className='w-full lg:w-1/2 px-6'>
-            {(isNewUser === false || first_name !== '') && (
-              <form onSubmit={handleVerify}>
-                <label className='text-xs'>Enter OTP</label>
-                <div className='mt-3'>
-                  <input
-                    className='border-b-2 w-full'
-                    type="tel"
-                    placeholder="Enter OTP Code"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    required
-                  />
-                </div>
-                {otpError && <p className="error text-red-500">{otpError}</p>}
-                <button className='mt-3 p-1 rounded text-xs bg-red-500 text-white' type="submit" disabled={isLoading}>
-                  Verify OTP
-                </button>
-              </form>
-            )}
-          </div>
-          <p className='mt-6 text-center text-sm sm:text-white sm:mt-10'>
-            By signing in, you agree to our
-            <span className='text-emerald-400'> Terms of Service</span> and
-            <span className='text-emerald-400'> Privacy</span>
-            <br />
-            <span className='text-emerald-400'> Policy</span>
-          </p>
-        </div>
-
-        <div className='lg:flex bg-red-800 flex items-center justify-center flex-grow sm:hidden md:hidden'>
-          <img className="h-64 w-64" src='images/hBowler.png' alt='home bowler' />
-        </div>
+    <div className='bg-null flex flex-col justify-center items-center w-full lg:w-auto lg:mx-6 mb-32'>
+      <img className="h-64 w-64 mt-10 sm:hidden" src="images/hBat.png" alt="Baseball Bat" />
+      <p className='mt-32 font-semibold text-2xl lg:text-4xl text-center text-white'>Welcome to cricStars</p>
+      <div className='flex items-center mt-8 w-full'>
+        <hr className="border-t-2 border-gray-400 w-1/4 lg:w-1/2" />
+        <p className='text-center w-1/2 lg:w-96 text-white'>CONTINUE WITH</p>
+        <hr className="border-t-2 border-gray-400 w-1/4 lg:w-1/2" />
       </div>
-      <div>
-
+      <div className='w-full px-6'>
+        <form onSubmit={handleCheckUser} className='mt-6'>
+          <label className='text-xs text-white'>Mobile Number</label>
+          <div className='mt-3'>
+            <input
+              className='border-b-2 w-full'
+              type="tel"
+              placeholder="Enter Number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              required
+            />
+          </div>
+          {formError && <p className="error text-red-500">{formError}</p>}
+          {phoneError && <p className="error text-red-500">{phoneError}</p>}
+          <button type="submit" disabled={isLoading} className={`text-xs text-white mt-3 p-1 rounded ${isNewUser ? 'bg-red-500' : (isNewUser === false ? 'bg-green-500' : 'bg-blue-500')}`}>
+            Check User
+          </button>
+        </form>
       </div>
+      <div className='w-full lg:w-1/2 px-6'>
+        {isNewUser && (
+          <form onSubmit={handleSubmit}>
+            <label className='text-xs text-white'>Your Name</label>
+            <div className='mt-3'>
+              <input
+                className='border-b-2 w-full'
+                type="text"
+                placeholder="Name"
+                value={first_name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            {nameError && <p className="error text-red-500">{nameError}</p>}
+            <button type="submit" disabled={isLoading} className="mt-3 p-1 rounded bg-red-500 text-white">
+              Send OTP
+            </button>
+          </form>
+        )}
+      </div>
+      <div className='w-full lg:w-1/2 px-6'>
+        {(isNewUser === false || first_name !== '') && (
+          <form onSubmit={handleVerify}>
+            <label className='text-xs'>Enter OTP</label>
+            <div className='mt-3'>
+              <input
+                className='border-b-2 w-full'
+                type="tel"
+                placeholder="Enter OTP Code"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                required
+              />
+            </div>
+            {otpError && <p className="error text-red-500">{otpError}</p>}
+            <button className='mt-3 p-1 rounded text-xs bg-red-500 text-white' type="submit" disabled={isLoading}>
+              Verify OTP
+            </button>
+          </form>
+        )}
+      </div>
+      <p className='mt-6 text-center text-sm text-white sm:mt-10'>
+        By signing in, you agree to our
+        <span className='text-emerald-400'> Terms of Service</span> and
+        <span className='text-emerald-400'> Privacy</span>
+        <br />
+        <span className='text-emerald-400'> Policy</span>
+      </p>
+    </div>
+
+    {/* <div className='lg:flex flex items-center justify-center flex-grow sm:hidden md:hidden'>
+      <img className="h-64 w-64" src='images/hBowler.png' alt='home bowler' />
+    </div> */}
+  </div>
+</div>
+
     </>
   )
 }

@@ -11,6 +11,7 @@ class MatchSerializer(serializers.ModelSerializer):
         model = Match
         fields = '__all__'
 
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

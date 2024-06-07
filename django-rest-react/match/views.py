@@ -29,6 +29,7 @@ class MatchViewSet(viewsets.ModelViewSet):
 
         # teams_played_against = user_matches.exclude(team_id__in=user_matches.values_list('team_id', flat=True)).values_list('team_id', flat=True).distinct()
 #########################################   
+
         teams_played_for = Team.objects.all()
         teams_played_against = Team.objects.all()     
         

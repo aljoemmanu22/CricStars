@@ -16,6 +16,9 @@ import axios from 'axios'
 import StartMatch from "../../../pages/Match/StartMatch";
 import MatchCreationForm from "../../../pages/Match/MatchCreationForm";
 import MatchDetails from "../../../pages/Match/MatchDetails";
+import ScoringInterface from "../../../pages/Match/ScoringInterface";
+import UserScoringInterface from "../../../pages/Match/UserScoringInterface";
+
 
 
 
@@ -111,8 +114,20 @@ function UserWrapper() {
             </PrivateRoute>}>
           </Route>
 
-        </Routes>    
-      <UserFooter />
+          <Route  path="user-cordinator-home" element={
+            <PrivateRoute>
+              <UserScoringInterface />
+            </PrivateRoute>}>
+          </Route>
+
+          <Route  path="scoring-interface/:matchId" element={
+            <PrivateRoute>
+              <ScoringInterface />
+            </PrivateRoute>}>
+          </Route>
+
+      </Routes>    
+    <UserFooter />
     
     </>
   );

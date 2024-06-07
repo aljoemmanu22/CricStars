@@ -22,3 +22,9 @@ class MatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = '__all__'
+
+
+class MatchDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Match
+        fields = '__all__'

@@ -6,8 +6,10 @@ import { useNavigate } from 'react-router-dom';
 const MatchCreationForm = () => {
   const [homeTeam, setHomeTeam] = useState('');
   console.log(homeTeam)
+  const [homeTeamName, setHomeTeamName] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   console.log(awayTeam)
+  const [awayTeamName, setAwayTeamName] = useState('');
   const [date, setDate] = useState('');
   const [groundLocation, setGroundLocation] = useState('home');
   const [umpire1, setUmpire1] = useState('');
@@ -37,6 +39,10 @@ const MatchCreationForm = () => {
   const [newPlayer, setNewPlayer] = useState({ firstName: '', phoneNumber: '' });
   const [errorMessages, setErrorMessages] = useState({ home: [], away: [] });
   const [validationMessage, setValidationMessage] = useState('');
+  const [TossWinner, setTossWinner] = useState('');
+  console.log(TossWinner)
+  const [TossElect, setTossElect] = useState('')
+  console.log(TossElect)
 
   const navigate = useNavigate(); // Initialize navigate function
 
@@ -94,6 +100,9 @@ const MatchCreationForm = () => {
       umpire_2: umpire2,
       weather,
       overs,
+      overs_per_bowler: oversPerBowler,
+      toss_winner: TossWinner,
+      elected_to: TossElect
     };
 
     axios.post(baseURL + '/api/match/matches/', matchData, {
@@ -320,7 +329,7 @@ const MatchCreationForm = () => {
           
           <div className='m-1'>
             <button className={`w-full ${homeTeam === team.id ? 'border-blue-500' : 'border-gray-300'} border-2`} 
-            onClick={() => setHomeTeam(team.id)}
+            onClick={() => [setHomeTeam(team.id), setHomeTeamName(team.team_name)] }
             >
             <div className='h-auto w-full bg-slate-100 rounded-lg flex items-center border py-2'>
               <div className='w-auto pl-4'>
@@ -389,7 +398,7 @@ const MatchCreationForm = () => {
           {teamsPlayedAgainst.map(team => (
             <div className='m-1'>
               <button className={`w-full ${awayTeam === team.id ? 'border-blue-500' : 'border-gray-300'} border-2`}
-              onClick={() => setAwayTeam(team.id)}
+              onClick={() => [setAwayTeam(team.id), setAwayTeamName(team.team_name)] }
               >
               <div className='h-auto w-full bg-slate-100 rounded-lg flex items-center border py-2'>
                 <div className='w-auto pl-4'>
@@ -711,9 +720,9 @@ const MatchCreationForm = () => {
                 {awayTeam !== '' ? <img src="/images/AP.png" className="h-auto cursor-pointer rounded-full" alt="Logo" /> : <p className='text-white text-3xl'>+</p>}
               </div>
             </div>
-            <div className='flex flex-row pt-3'>
-              <div className='mx-20'>Team 1</div>
-              <div className='mx-20'>Team 2</div>
+            <div className='flex flex-row pt-3 font-bold'>
+              <div className='mx-20'>{homeTeamName}</div>
+              <div className='mx-20'>{awayTeamName}</div>
             </div>
             <div className='flex flex-row'>
               <div className='pt-3 mx-14'>
@@ -817,11 +826,30 @@ const MatchCreationForm = () => {
                 </label>
               </div>
             </div>
+            <div className='flex mt-1 items-center justify-center'>
+              <div className='flex-col mt-6 pt-1'>
+                <label className=''>
+                  Who won the tosss
+                  <select onChange={(e) => setTossWinner(e.target.value)}>
+                    <option value={homeTeamName}>{homeTeamName}</option>
+                    <option value={awayTeamName}>{awayTeamName}</option>
+                  </select>
+                </label>
+                <label className='pl-5'>
+                  Elected to
+                  <select onChange={(e) => setTossElect(e.target.value.toLowerCase())}> {/* Ensure value is lowercase */}
+                    <option value='bat'>Bat</option>
+                    <option value='bowl'>Bowl</option>
+                  </select>
+                </label>
+              </div>
+            </div>
             <div className='mt-8'>
               <button className='bg-teal-500 p-2 text-white' type="submit">Schedule Match</button>
             </div>
           </div>
         </form>
+      
       }
       
     </div>
