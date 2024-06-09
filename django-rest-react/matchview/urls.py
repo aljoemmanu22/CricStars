@@ -1,7 +1,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import MatchesViewSet, MatchDetailView, update_player_info, live_scorecard, update_score
+from .views import MatchesViewSet, MatchDetailView, update_player_info, live_scorecard, update_score, update_striker_nonstriker, update_bowler, new_batter_selection
 
 router = DefaultRouter()
 router.register(r'matches', MatchesViewSet)
@@ -12,4 +12,7 @@ urlpatterns = [
     path('update-player-info/', update_player_info, name='update-player-info'),
     path('live_scorecard/<int:match_id>/', live_scorecard, name='live_scorecard'),
     path('update-score/', update_score, name='update-score'),
+    path('update-striker-nonstriker/', update_striker_nonstriker, name='update-striker-nonstriker'),
+    path('update-bowler/', update_bowler, name='update_bowler'),
+    path('new-batter-selection/', new_batter_selection, name='new-batter-selection'),
 ]

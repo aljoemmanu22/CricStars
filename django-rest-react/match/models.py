@@ -94,8 +94,8 @@ class MatchTeamPlayer(models.Model):
   # ... other bowling stats as needed
 
   # Other Stats
-  how_out = models.CharField(max_length=20, blank=True, null=True, )
-  people_involved = models.CharField(max_length=30, blank=True, null=True)
+  how_out = models.CharField(max_length=20, blank=True, null=True,)
+  people_involved = models.JSONField(blank=True, null=True)
 
   is_striker = models.BooleanField(default=False, blank=True, null=True)
   is_non_striker = models.BooleanField(default=False,  blank=True, null=True)

@@ -12,6 +12,7 @@ function PlayerSelectionOverlay({
   handleStartScoring,
   missingInfo,
   updatePlayerInfo,
+  handleBatterChange
 }) {
   const BATTING_STYLE_CHOICES = [
     ['Right-handed', 'Right-handed'],
@@ -51,31 +52,44 @@ function PlayerSelectionOverlay({
     <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 overflow-hidden p-4">
       <div className="bg-gray-800 p-8 rounded shadow-lg text-white max-w-md w-full max-h-full overflow-y-auto">
         <h1 className="text-2xl mb-4">Select Players</h1>
+        {console.log(striker)}
+        {striker.id === '' && striker.name === '' && (
+          <>
+            <label className="block mb-2">Striker Batsman</label>
+            <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(striker)} onChange={e => handleBatterChange(JSON.parse(e.target.value), false)}>
+              <option value="">Select Striker Batsman</option>
+              {battingTeamPlayers.map(player => (
+                <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
+              ))}
+            </select>
+          </>
+        )}
 
-        <label className="block mb-2">Striker Batsman</label>
-        <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(striker)} onChange={handleStrikerChange}>
-          <option value="">Select Striker Batsman</option>
-          {battingTeamPlayers.map(player => (
-            <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
-          ))}
-        </select>
+        {nonStriker.id === '' && nonStriker.name === '' && (
+          <>
+            <label className="block mb-2">Non-Striker Batsman</label>
+            <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(nonStriker)} onChange={e => handleBatterChange(JSON.parse(e.target.value), true)}>
+              <option value="">Select Non-Striker Batsman</option>
+              {battingTeamPlayers.map(player => (
+                <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
+              ))}
+            </select>
+          </>
+        )}
 
-        <label className="block mb-2">Non-Striker Batsman</label>
-        <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(nonStriker)} onChange={handleNonStrikerChange}>
-          <option value="">Select Non-Striker Batsman</option>
-          {battingTeamPlayers.map(player => (
-            <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
-          ))}
-        </select>
+        {selectedBowler.id === '' && selectedBowler.name === '' && (
+          <>
+            <label className="block mb-2">Bowler</label>
+            <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(selectedBowler)} onChange={handleBowlerChange}>
+              <option value="">Select Bowler</option>
+              {bowlingTeamPlayers.map(player => (
+                <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
+              ))}
+            </select>
+          </>
+        )}
 
-        <label className="block mb-2">Bowler</label>
-        <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(selectedBowler)} onChange={handleBowlerChange}>
-          <option value="">Select Bowler</option>
-          {bowlingTeamPlayers.map(player => (
-            <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
-          ))}
-        </select>
-
+        
         {missingInfo && missingInfo.length > 0 && (
           <div className="text-white">
             <h2 className="text-xl mb-4">Update Player Information</h2>

@@ -70,7 +70,9 @@ class MatchDetailView(generics.RetrieveAPIView):
                 'bowling_style': user.bowling_style,
                 'is_striker': player.is_striker,
                 'is_non_striker': player.is_non_striker,
-                'is_bowling': player.is_bowling
+                'is_bowling': player.is_bowling,
+                'is_batted' : player.is_bowling,
+                'is_bowled' : player.is_bowled
             })
 
         away_team_players_data = []
@@ -84,7 +86,9 @@ class MatchDetailView(generics.RetrieveAPIView):
                 'bowling_style': user.bowling_style,
                 'is_striker': player.is_striker,
                 'is_non_striker': player.is_non_striker,
-                'is_bowling': player.is_bowling
+                'is_bowling': player.is_bowling,
+                'is_batted' : player.is_bowling,
+                'is_bowled' : player.is_bowled
             })
 
         current_striker = None
@@ -122,7 +126,7 @@ class MatchDetailView(generics.RetrieveAPIView):
             current_bowler_data = None
 
         # Fetch the last ball data for the current match
-        last_ball = BallByBall.objects.filter(match_id=match_id).order_by('-over', '-ball_in_over').first()
+        last_ball = BallByBall.objects.filter(match_id=match_id).order_by('-id').first()
         if last_ball:
             last_ball_data = {
                 'onstrike': last_ball.onstrike,
@@ -266,6 +270,7 @@ def live_scorecard(request, match_id):
 
 import logging
 from rest_framework.parsers import JSONParser
+from django.db import connection
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +294,9 @@ def update_score(request):
         extras = data.get('extras')
         extras_type = data.get('extras_type')
         innings = data.get('innings')
+        who_out = data.get('who_out')
 
+        
         if not (match_id and onstrike and bowler and over is not None and ball_in_over is not None):
             return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -299,25 +306,47 @@ def update_score(request):
             match.status = 'live'
             match.save()
 
-        # Create or update the BallByBall entry
-        ball, created = BallByBall.objects.get_or_create(
-            match_id=match,
-            over=over,
-            ball_in_over=ball_in_over,
-            innings=innings,
-            defaults={
-                'onstrike': onstrike,
-                'offstrike': offstrike,
-                'bowler': bowler,
-                'total_runs': total_runs,
-                'total_wickets': total_wickets,
-                'how_out': how_out,
-                'people_involved': people_involved,
-                'runs': runs,
-                'extras': extras,
-                'extras_type': extras_type
-            }
-        )
+        
+
+        if extras_type != 'wd' and extras_type != 'nb':
+            # Create or update the BallByBall entry
+            ball, created = BallByBall.objects.get_or_create(
+                match_id=match,
+                over=over,
+                ball_in_over=ball_in_over,
+                innings=innings,
+                defaults={
+                    'onstrike': onstrike,
+                    'offstrike': offstrike,
+                    'bowler': bowler,
+                    'total_runs': total_runs,
+                    'total_wickets': total_wickets,
+                    'how_out': how_out,
+                    'people_involved': people_involved,
+                    'runs': runs,
+                    'extras': extras,
+                    'extras_type': extras_type,
+                    'who_out': who_out
+                }
+            )
+        else:
+            created = BallByBall.objects.create(
+                match_id=match,
+                over=over,
+                innings=innings,
+                onstrike = onstrike,
+                offstrike = offstrike,
+                bowler = bowler,
+                total_runs = total_runs,
+                total_wickets = total_wickets,
+                how_out = how_out,
+                people_involved = people_involved,
+                runs = runs,
+                extras = extras,
+                extras_type = extras_type,
+                ball_in_over = ball_in_over,
+                who_out = who_out
+            )
 
         if not created:
             # Update existing entry
@@ -338,11 +367,20 @@ def update_score(request):
         player = MatchTeamPlayer.objects.get(player_id=onstrike, match_id=match_id)
         bowler_stats = MatchTeamPlayer.objects.get(player_id=bowler, match_id=match_id)
 
-        if runs == 0:
+        if ball_in_over == 6 and extras_type == '' or extras_type == 'lb':
+            bowler_stats.bowling_overs += 1
+
+        if player.is_batted != True:
+            player.is_batted = True
+        
+        if bowler_stats.is_bowled != True:
+            player.is_bowled = True
+
+        if runs == 0 and extras_type == '':
             player.batting_balls_faced += 1
             player.save()
 
-        if runs > 0:
+        if runs > 0 and extras_type == '':
             player.batting_balls_faced += 1
             player.batting_runs_scored += runs
             if runs == 4:
@@ -354,33 +392,55 @@ def update_score(request):
             player.save()
             bowler_stats.bowling_runs_conceded += runs
             bowler_stats.save()
-        
-        # Additional logic for updating player stats...
-        # Update MatchTeamPlayer stats if it's not an extras ball
-        
-        if how_out:
-            # Update player's how_out and people_involved
-            player = MatchTeamPlayer.objects.get(player_id=onstrike, match_id=match_id)
-            player.how_out = how_out
-            player.people_involved = people_involved
-            player.save()
 
-            # Check if the wicket is not run out, then credit the wicket to the bowler
-            if how_out != 'run out':
-                bowler_player = MatchTeamPlayer.objects.get(player_id=bowler, match_id=match_id)
-                bowler_player.bowling_wickets += 1
-                bowler_player.save()
 
         # Handle extras
-        if extras:
+        if extras or extras_type != '':
             if extras_type == 'wide':
                 bowler_stats.bowling_wides += 1
+                bowler_stats.bowling_runs_conceded += 1
             elif extras_type == 'no_ball':
                 bowler_stats.bowling_noballs += 1
+                bowler_stats.bowling_runs_conceded += 1 + runs
+                player.batting_runs_scored += runs
+
             bowler_stats.bowling_runs_conceded += 1
             bowler_stats.save()
 
-        
+
+        if how_out:
+            player.how_out = how_out
+            player.people_involved = people_involved
+            if how_out != 'run_out':
+                bowler_stats.bowling_wickets += 1
+            out_player = MatchTeamPlayer.objects.get(player_id=who_out, match_id=match_id)
+            
+            print(f'Before change - Striker: {out_player.is_striker}, Non-Striker: {out_player.is_non_striker}')
+
+            if out_player.is_striker:
+                out_player.is_striker = False
+                print('view', who_out, 'set is_striker to False')
+            elif out_player.is_non_striker:
+                out_player.is_non_striker = False
+                print('view', who_out, 'set is_non_striker to False')
+
+            print(f'After change - Striker: {out_player.is_striker}, Non-Striker: {out_player.is_non_striker}')
+
+            # Direct SQL query to update the database
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE match_matchteamplayer
+                    SET is_striker = %s, is_non_striker = %s
+                    WHERE player_id_id = %s AND match_id_id = %s
+                """, [out_player.is_striker, out_player.is_non_striker, who_out, match_id])
+
+            # Refresh object from the database
+            out_player.refresh_from_db()
+            print(f'After save - Striker: {out_player.is_striker}, Non-Striker: {out_player.is_non_striker}')
+            
+            bowler_stats.save()
+            player.save()
+
 
         return Response({'message': 'Score updated successfully'}, status=status.HTTP_200_OK)
     except Exception as e:
@@ -388,3 +448,88 @@ def update_score(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['POST'])
+def update_striker_nonstriker(request):
+    try:
+        data = request.data
+        match_id = data.get('match_id')
+        striker_id = data.get('striker_id')
+        non_striker_id = data.get('non_striker_id')
+
+        # Reset previous strikers
+        MatchTeamPlayer.objects.filter(match_id=match_id, is_striker=True).update(is_striker=False)
+        MatchTeamPlayer.objects.filter(match_id=match_id, is_non_striker=True).update(is_non_striker=False)
+
+        # Set new strikers
+        if striker_id:
+            striker = get_object_or_404(MatchTeamPlayer, match_id=match_id, player_id=striker_id)
+            striker.is_striker = True
+            striker.save()
+
+        if non_striker_id:
+            non_striker = get_object_or_404(MatchTeamPlayer, match_id=match_id, player_id=non_striker_id)
+            non_striker.is_non_striker = True
+            non_striker.save()
+
+        return JsonResponse({'message': 'Striker and non-striker updated successfully'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['POST'])
+def update_bowler(request):
+    try:
+        data = request.data
+        match_id = data.get('match_id')
+        new_bowler_id = data.get('new_bowler_id')
+        
+        # Find and update the current bowler to set is_bowling to False
+        current_bowler = MatchTeamPlayer.objects.filter(match_id=match_id, is_bowling=True).first()
+        if current_bowler:
+            current_bowler.is_bowling = False
+            current_bowler.save()
+        
+        # Find and update the new bowler to set is_bowling to True
+        new_bowler = get_object_or_404(MatchTeamPlayer, match_id=match_id, player_id=new_bowler_id)
+        new_bowler.is_bowling = True
+        new_bowler.save()
+
+        return JsonResponse({'message': 'Bowler updated successfully'}, status=200)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    
+
+
+
+@api_view(['POST'])
+def new_batter_selection(request):
+    try:
+        data = request.data
+        match_id = data.get('match_id')
+        player_id = data.get('player_id')
+        is_non_striker = data.get('is_non_striker', False)
+        
+        if not (match_id and player_id):
+            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch the player instance
+        player = MatchTeamPlayer.objects.get(match_id=match_id, player_id=player_id)
+
+        # Set is_batted to True
+        player.is_batted = True
+
+        # Update is_striker or is_non_striker
+        if is_non_striker:
+            player.is_non_striker = True
+            player.is_striker = False
+        else:
+            player.is_striker = True
+            player.is_non_striker = False
+
+        player.save()
+
+        return Response({'message': 'Player status updated successfully'}, status=status.HTTP_200_OK)
+    except MatchTeamPlayer.DoesNotExist:
+        return Response({'error': 'Player not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
