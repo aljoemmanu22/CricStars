@@ -64,28 +64,29 @@ class User(AbstractBaseUser):
     date_of_birth = models.DateField(null=True, blank=True) 
 
     current_team_name = models.ForeignKey('match.Team', on_delete=models.PROTECT,  null=True, blank=True)
-    matches_played = models.PositiveIntegerField(null=True, blank=True)
+    matches_played = models.PositiveIntegerField(default=0, null=True, blank=True)
 
     # fields which store compiled batting match statistics
     # these will be compiled by a views.py function
-    batting_total_runs_scored = models.PositiveIntegerField(null=True, blank=True)
-    batting_inning = models.PositiveIntegerField(null=True, blank=True)
-    batting_high_score = models.PositiveIntegerField(null=True, blank=True)
-    batting_average = models.FloatField(null=True, blank=True)
-    batting_strike_rate = models.FloatField(null=True, blank=True)
-    batting_50s = models.PositiveIntegerField(null=True, blank=True)
-    batting_100s = models.PositiveIntegerField(null=True, blank=True)
+    batting_total_runs_scored = models.PositiveIntegerField(default=0, null=True, blank=True)
+    batting_inning = models.PositiveIntegerField(default=0, null=True, blank=True)
+    batting_high_score = models.PositiveIntegerField(default=0, null=True, blank=True)
+    batting_average = models.FloatField(default=0, null=True, blank=True)
+    batting_strike_rate = models.FloatField(default=0, null=True, blank=True)
+    batting_50s = models.PositiveIntegerField(default=0, null=True, blank=True)
+    batting_100s = models.PositiveIntegerField(default=0, null=True, blank=True)
+    batting_total_balls_faced = models.PositiveIntegerField(default=0, null=True, blank=True)
 
     # fields which store compiled bowling match statistics
     # these will be compiled by a views.py function
-    bowling_total_balls_faced = models.PositiveIntegerField(null=True, blank=True)
-    bowling_runs_conceded = models.PositiveIntegerField(null=True, blank=True)
-    bowling_wickets = models.PositiveIntegerField(null=True, blank=True)
+    bowling_total_overs_bowled = models.PositiveIntegerField(default=0, null=True, blank=True)
+    bowling_runs_conceded = models.PositiveIntegerField(default=0, null=True, blank=True)
+    bowling_wickets = models.PositiveIntegerField(default=0, null=True, blank=True)
     bowling_best_figures = models.CharField(max_length=10, default='NA')
-    bowling_average = models.FloatField(null=True, blank=True)
-    bowling_strike_rate = models.FloatField(null=True, blank=True)
-    bowling_economy = models.FloatField(null=True, blank=True)
-    bowling_5ws = models.PositiveIntegerField(null=True, blank=True)
+    bowling_average = models.FloatField(default=0, null=True, blank=True)
+    bowling_strike_rate = models.FloatField(default=0, null=True, blank=True)
+    bowling_economy = models.FloatField(default=0, null=True, blank=True)
+    bowling_5ws = models.PositiveIntegerField(default=0, null=True, blank=True)
     
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['first_name']

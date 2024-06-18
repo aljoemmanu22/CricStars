@@ -6,6 +6,7 @@ import { set_Authentication } from "../../Redux/authentication/authenticationSli
 import { useDispatch ,useSelector} from 'react-redux';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useNavigate } from 'react-router-dom';
 
 
 const ProfilePage = () => {
@@ -127,7 +128,19 @@ const ProfilePage = () => {
 
 
 ////////////////////////////////////           User Profile Details ends          //////////////////////////////////
+const navigate = useNavigate()
 
+const logout=()=>{
+  localStorage.clear()
+  dispatch(
+    set_Authentication({
+      name:null,
+      isAuthenticated:null,
+      isAdmin:false,
+    })
+  )
+  navigate('/')
+}
 
 
 
@@ -209,6 +222,11 @@ const ProfilePage = () => {
               <div className='flex items-center justify-center mt-3'>
                 <button type="submit" className="btn btn-primary btn-rounded btn-lg">
                   Update User Profile
+                </button>
+              </div>
+              <div className='flex items-center justify-center pb-4 mt-4'>
+                <button onClick={logout} type="submit" className="btn btn-primary btn-lg bg-gray-400">
+                    LOGOUT
                 </button>
               </div>
             </form>

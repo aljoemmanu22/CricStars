@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import PlayerSelectionOverlay from "./PlayerSelectionOverlay";
+import ResultModel from "./ResultModel";
 
 function ScoringInterface() {
   const { matchId } = useParams();
@@ -16,6 +17,8 @@ function ScoringInterface() {
   const [strikerData, setStrikerData] = useState();
   const [nonStrikerData, setNonStrikerData] = useState();
   const [selectedBowlerData, setSelectedBowlerData] = useState();
+  const [home_team, setHomeTeam] = useState({ id: '', name: '' })
+  const [away_team, setAwayTeam] = useState({ id: '', name: '' })
 
 
   const [missingInfo, setMissingInfo] = useState([]);
@@ -51,86 +54,333 @@ function ScoringInterface() {
   const [isNewBowlerPopupVisible, setIsNewBowlerPopupVisible] = useState(false);
   const [strikeChange, setStrikeChange] = useState(false);
 
+  const [previousBowler, setPreviousBowler] = useState('')
+  const [currentOverEvents, setCurrentOverEvents] = useState([]);
+  const [result, setResult] = useState('')
+  const [first_innings_last_ball, setFirst_innings_last_ball] = useState()
+  const [first_innings_total, set_first_innings_total] = useState(0)
+
+  const [wides, setWides] = useState(0);
+  const [noBalls, setNoBalls] = useState(0);
+  const [legbyes, setLegbyes] = useState(0);
+  const [byes, setByes] = useState(0);
+  const [total_extras, setTotalExtras] = useState(0);
+  const [runs_inover, setRunsInOver] = useState(0);
+  const [wickets_inover, setWicketsInOver] = useState(0);
+
+  const [isResultModalVisible, setIsResultModalVisible] = useState(false);
+  const [isInningsEndModalVisible, setInningsEndModalVisible] = useState(false) 
+  const [lastBall, setLastBall] = useState()
+
   // Function to show notification
   const showNotification = (message) => {
     setNotification(message);
     setTimeout(() => setNotification(''), 3000); // Hide after 3 seconds
   };
 
-  useEffect(() => {
-    axios.get(`${baseURL}/api/match-detail/${matchId}/`, {
-      headers: {
-        authorization: `Bearer ${token}`,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    })
-    .then((response) => {
-      const match = response.data.match;
-      setTossWinner(response.data.match.toss_winner);
-      setTossElected(response.data.match.elected_to);
-      setMatchDetails({
-        ...match,
-        home_team: response.data.home_team,
-        away_team: response.data.away_team
+  const handleStartMatch = async () => {
+    try {
+      const response = await axios.post(baseURL+'/api/start-match/', { match_id: matchId }, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
       });
-      setMatchStatus(response.data.match.status);
+      console.log(response.data.message);
+      setIsSelectionDone(false)
+    } catch (error) {
+      console.error('Error starting match:', error);
+    }
+  };
+
+  const handleInningsChange = async () => {
+    try {
+      const response = await axios.post(baseURL+'/api/innings-change/', { match_id: matchId },{
+        headers: {
+          authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(response.data.message);
+      setIsNewBowlerPopupVisible(false)
+      setIsSelectionDone(true)
+      window.location.reload();
+    } catch (error) {
+      console.error('Error changing innings:', error);
+    }
+  };
+
+  const handleEndMatch = async (result) => {
+    try {
+      const response = await axios.post(baseURL+'/api/end-match/', { match_id: matchId, result }, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(response.data.message);
+      setResult(result);
+      fetchMatchDetails(
+        matchId, 
+        token, 
+        setMatchDetails, 
+        setTossWinner, 
+        setTossElected, 
+        setMatchStatus, 
+        setBattingTeamPlayers, 
+        setBowlingTeamPlayers, 
+        setTotalRuns, 
+        setTotalWickets, 
+        setOver, 
+        setBallInOver, 
+        setStriker, 
+        setStrikerData, 
+        setNonStriker, 
+        setNonStrikerData, 
+        setSelectedBowler, 
+        setSelectedBowlerData, 
+        setIsSelectionDone, 
+        checkForMissingInfo, 
+        setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+      );
+      setIsSelectionDone(true)
+      setIsNewBowlerPopupVisible(false)
+      setIsResultModalVisible(true); 
+    } catch (error) {
+      console.error('Error ending match:', error);
+    }
+  };
+  
+///////////////////////////////////////////////////// experiment ///////////////////////////////////////////////////////
+
+
+  const fetchMatchDetails = async (matchId, token, setMatchDetails, setTossWinner, setTossElected, setMatchStatus, setBattingTeamPlayers, setBowlingTeamPlayers, setTotalRuns, setTotalWickets, setOver, setBallInOver, setStriker, setStrikerData, setNonStriker, setNonStrikerData, setSelectedBowler, setSelectedBowlerData, setIsSelectionDone, checkForMissingInfo, setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver) => {
+    try {
+      const response = await axios.get(`${baseURL}/api/match-detail/${matchId}/`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.data.match.innings === 2) {
+        setFirst_innings_last_ball(response.data.first_innings_last_ball)
+        set_first_innings_total(response.data.first_innings_total)
+      }
+
+      const match = response.data.match;
+      setTossWinner(match.toss_winner);
+      setTossElected(match.elected_to);
+      setInnings(response.data.match.innings)
+      setMatchDetails({
+        match: response.data.match,
+      });
+      setHomeTeam(response.data.home_team)
+      setAwayTeam(response.data.away_team)
+      setMatchStatus(match.status);
+
       const homeTeamPlayers = response.data.home_team_players || [];
       const awayTeamPlayers = response.data.away_team_players || [];
+
       if (match.toss_winner && match.elected_to) {
         const isHomeTeamBattingFirst = (match.batting_first === 'home');
-        setBattingTeamPlayers(isHomeTeamBattingFirst ? homeTeamPlayers : awayTeamPlayers);
-        setBowlingTeamPlayers(isHomeTeamBattingFirst ? awayTeamPlayers : homeTeamPlayers);
+        if (response.data.match.innings === 1) {
+          setBattingTeamPlayers(isHomeTeamBattingFirst ? homeTeamPlayers : awayTeamPlayers);
+          setBowlingTeamPlayers(isHomeTeamBattingFirst ? awayTeamPlayers : homeTeamPlayers);
+        } else {
+          setBattingTeamPlayers(isHomeTeamBattingFirst ? awayTeamPlayers : homeTeamPlayers);
+          setBowlingTeamPlayers(isHomeTeamBattingFirst ? homeTeamPlayers : awayTeamPlayers);
+        }
       }
-      console.log('latest',response.data)
-      setTotalRuns(response.data.last_ball.total_runs)
-      setTotalWickets(response.data.last_ball.total_wickets)
-      setOver(response.data.last_ball.over)
-      setBallInOver(response.data.last_ball.ball_in_over)
-      checkForMissingInfo(homeTeamPlayers.concat(awayTeamPlayers));
-        if (response.data.current_striker) {
-          setStriker({
-            id: response.data.current_striker.player_id,
-            name: response.data.current_striker.name
-          });
-          setStrikerData(response.data.current_striker)
+
+      // console.log('latest', response.data);
+
+      if (response.data.last_ball) {
+        setTotalRuns(response.data.last_ball.total_runs);
+        setTotalWickets(response.data.last_ball.total_wickets);
+        setOver(response.data.last_ball.over);
+        setBallInOver(response.data.last_ball.ball_in_over);
+        setWides(response.data.last_ball.wides)
+        setNoBalls(response.data.last_ball.noBalls)
+        setLegbyes(response.data.last_ball.legbyes)
+        setByes(response.data.last_ball.byes)
+        setTotalExtras(response.data.last_ball.total_extras)
+        setRunsInOver(response.data.last_ball.runs_inover)
+        setWicketsInOver(response.data.last_ball.wickets_inover)
+        setLastBall(response.data.lastBall)
+        
+        if (response.data.last_ball.ball_in_over == 6) {
+          console.log('what')
+          if (response.data.last_ball.bowler == response.data.current_bowler.player_id) {
+            console.log('dig')
+            setIsNewBowlerPopupVisible(true)
+          }
         }
-        if (response.data.current_non_striker) {
-          setNonStriker({
-            id: response.data.current_non_striker.player_id,
-            name: response.data.current_non_striker.name
-          });
-          setNonStrikerData(response.data.current_non_striker)
-        }
-        if (response.data.current_bowler) {
-          setSelectedBowler({
-            id: response.data.current_bowler.player_id,
-            name: response.data.current_bowler.name
-          });
-          setSelectedBowlerData(response.data.current_bowler)
+        
+      
+//////////////// handling striker change //////////////////
+        if (response.data.last_ball.ball_in_over === 6 && response.data.last_ball.extras_type === '') {
+          const runss = response.data.last_ball.runs
+          const striking = response.data.last_ball.onstrike
+          const offstrike = response.data.last_ball.offstrike
+
+          if (runss % 2 !== 0) {
+            updateStrikerAndNonStriker(striking, offstrike);
+          }
         }
 
-        if (response.data.current_striker === null) {
-          setStriker({ id: '', name: '' });
-          setStrikerData()
-          setIsSelectionDone(false);
-        }
-        if (response.data.current_non_striker === null) {
-          setNonStriker({ id: '', name: '' });
-          setNonStrikerData()
-          setIsSelectionDone(false);
-        }
-        if (response.data.current_bowler === null) {
-          setSelectedBowler({ id: '', name: '' });
-          setSelectedBowlerData()
-          setIsSelectionDone(true);
+        // if (response.data.last_ball.ball_in_over === 6 && response.last_ball.how_out === 'run_out') {
+        //   const runss = response.data.last_ball.runs
+        //   const striking = response.data.last_ball.onstrike
+        //   const offstrike = response.data.last_ball.offstrike
+        //   if(response.last_ball.how_out != ''){
+        //     if(response.last_ball.how_out === 'run_out' && runss % 2 != 0){
+        //       const strikeC = true
+        //     } else {
+        //     const strikeC = false
+        //     }
+        //   }
+        // }
+///////////////////////////////////////////////////////////
+
+        setPreviousBowler(response.data.last_ball.bowler)
+        if (response.data.last_ball.ballInOver === 6 && response.data.last_ball.extras_type === '') {
+          handleStrikeChangeRuns()
         }
       }
-    )
-    .catch((error) => {
+
+      checkForMissingInfo(homeTeamPlayers.concat(awayTeamPlayers));
+      setMatchStatus(response.data.match.status)
+
+      if (response.data.current_striker) {
+        setStriker({
+          id: response.data.current_striker.player_id,
+          name: response.data.current_striker.name
+        });
+        setStrikerData(response.data.current_striker);
+      } else {
+        setStriker({ id: '', name: '' });
+        setStrikerData();
+        setIsSelectionDone(false);
+      }
+
+      if (response.data.current_non_striker) {
+        setNonStriker({
+          id: response.data.current_non_striker.player_id,
+          name: response.data.current_non_striker.name
+        });
+        setNonStrikerData(response.data.current_non_striker);
+      } else {
+        setNonStriker({ id: '', name: '' });
+        setNonStrikerData();
+        setIsSelectionDone(false);
+      }
+
+      if (response.data.current_bowler) {
+        setSelectedBowler({
+          id: response.data.current_bowler.player_id,
+          name: response.data.current_bowler.name
+        });
+        setSelectedBowlerData(response.data.current_bowler);
+      } else {
+        setSelectedBowler({ id: '', name: '' });
+        setSelectedBowlerData();
+        setIsSelectionDone(false);
+      }
+
+      setCurrentOverEvents([])
+      setCurrentOverEvents(response.data.current_over);
+    } catch (error) {
       console.error("Error fetching match details:", error);
-    });
-  }, [strikeChange]);
+    }
+  };
+
+///////////////////////////////////////////////// useeffects ///////////////////////////////////////////////////////
+
+  useEffect(() => {
+    if (matchStatus === 'scheduled') {
+      handleStartMatch()
+      console.log('done')
+    }
+  }, [matchStatus]);
+
+  useEffect(() => {
+    if (matchDetails && innings == 1) {
+      const totalPlayers = battingTeamPlayers.length;
+      if (over >= matchDetails.match.overs || totalWickets >= battingTeamPlayers.length - 1) {
+        setInningsEndModalVisible(true)
+      }
+    }
+  }, [totalRuns, totalWickets, over, ballInOver])
+
+  useEffect(() => {
+    if (first_innings_last_ball && first_innings_total != 0 && matchStatus === 'live') {
+      if (matchDetails && innings == 2) {
+        const targetScore = first_innings_total + 1;
+        const totalPlayers = battingTeamPlayers.length - 1; // Total number of players in the team
+
+        // Check if second batting team has crossed the winning run
+        if (totalRuns >= targetScore) {
+          const winningTeam = matchDetails.match.batting_first === 'home' ? away_team.name : home_team.name;
+          const result = `${winningTeam} won by ${totalPlayers - totalWickets} wickets`;
+          handleEndMatch(result);
+        }
+        // Check if second batting team is all out before reaching the target score
+        else if (totalWickets >= totalPlayers) {
+          const winningTeam = matchDetails.match.batting_first === 'home' ? home_team.name : away_team.name;
+          const result = `${winningTeam} won by ${targetScore - totalRuns} runs`;
+          handleEndMatch(result);
+        }
+        // Check if second innings overs reach the maximum
+        else if (over >= matchDetails.match.overs) {
+          if (totalRuns > first_innings_total) {
+            const winningTeam = matchDetails.match.batting_first === 'home' ? away_team.name : home_team.name;
+            const result = `${winningTeam} won by ${totalPlayers - totalWickets} wickets`;
+            handleEndMatch(result);
+          } else if (totalRuns === first_innings_total) {
+            const result = 'Match drawn';
+            handleEndMatch(result);
+          } else {
+            const winningTeam = matchDetails.match.batting_first === 'home' ? home_team.name : away_team.name;
+            const result = `${winningTeam} won by ${first_innings_total - totalRuns} runs`;
+            handleEndMatch(result);
+          }
+        }
+      }
+    }
+  }, [totalRuns, totalWickets, over, ballInOver]);
+
+  useEffect(() => {
+    fetchMatchDetails(
+      matchId, 
+      token, 
+      setMatchDetails, 
+      setTossWinner, 
+      setTossElected, 
+      setMatchStatus, 
+      setBattingTeamPlayers, 
+      setBowlingTeamPlayers, 
+      setTotalRuns, 
+      setTotalWickets, 
+      setOver, 
+      setBallInOver, 
+      setStriker, 
+      setStrikerData, 
+      setNonStriker, 
+      setNonStrikerData, 
+      setSelectedBowler, 
+      setSelectedBowlerData, 
+      setIsSelectionDone, 
+      checkForMissingInfo,
+      setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+    );
+  }, [strikeChange, innings]);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
   useEffect(() => {
@@ -176,13 +426,20 @@ function ScoringInterface() {
           home_team: response.data.home_team,
           away_team: response.data.away_team
         });
+
         const homeTeamPlayers = response.data.home_team_players || [];
         const awayTeamPlayers = response.data.away_team_players || [];
         if (match.toss_winner && match.elected_to) {
           const isHomeTeamBattingFirst = (match.batting_first === 'home');
-          setBattingTeamPlayers(isHomeTeamBattingFirst ? homeTeamPlayers : awayTeamPlayers);
-          setBowlingTeamPlayers(isHomeTeamBattingFirst ? awayTeamPlayers : homeTeamPlayers);
+          if (innings === 1) {
+            setBattingTeamPlayers(isHomeTeamBattingFirst ? homeTeamPlayers : awayTeamPlayers);
+            setBowlingTeamPlayers(isHomeTeamBattingFirst ? awayTeamPlayers : homeTeamPlayers);
+          } else {
+            setBattingTeamPlayers(isHomeTeamBattingFirst ? awayTeamPlayers : homeTeamPlayers);
+            setBowlingTeamPlayers(isHomeTeamBattingFirst ? homeTeamPlayers : awayTeamPlayers);
+          }
         }
+
         checkForMissingInfo(homeTeamPlayers.concat(awayTeamPlayers));
         if (response.data.match.status === 'live') {
           if (response.data.current_striker) {
@@ -240,7 +497,15 @@ function ScoringInterface() {
       runs: 0,
       extras: 0,
       extras_type: '',
-      innings: innings
+      innings: innings,
+      who_out : whoOut,
+      wides : wides,
+      noBalls : noBalls,
+      legbyes : legbyes,
+      byes : byes,
+      total_extras : total_extras,
+      runs_inover : runs_inover,
+      wickets_inover : wickets_inover
     };
 
     switch (event) {
@@ -249,27 +514,27 @@ function ScoringInterface() {
         break;
       case '1':
         eventData.runs = 1;
-        setTotalRuns(totalRuns + 1);
+        eventData.total_runs = totalRuns + 1
         break;
       case '2':
         eventData.runs = 2;
-        setTotalRuns(totalRuns + 2);
+        eventData.total_runs = totalRuns + 2
         break;
       case '3':
         eventData.runs = 3;
-        setTotalRuns(totalRuns + 3);
+        eventData.total_runs = totalRuns + 3
         break;
       case '4':
         eventData.runs = 4;
-        setTotalRuns(totalRuns + 4);
+        eventData.total_runs = totalRuns + 4
         break;
       case '6':
         eventData.runs = 6;
-        setTotalRuns(totalRuns + 6);
+        eventData.total_runs = totalRuns + 6
         break;
       case 'wd':
         setIsWidePopupVisible(true);
-        break;
+        break;  
       case 'nb':
         setIsNoBallPopupVisible(true);
         break;
@@ -295,7 +560,7 @@ function ScoringInterface() {
       default:
         return;
     }
-    console.log("Sending eventData:", eventData);
+    // console.log("Sending eventData:", eventData);
 
     if (event !== 'wd' && event !== 'nb' && event !== 'lb' && event !== 'bye') {
 
@@ -307,7 +572,7 @@ function ScoringInterface() {
         },
       })
       .then(response => {
-        // Save the current score update in the history
+        // Save the current score update in the history////////////////////   undo current   /////////////////////////////////////////////////////
         setPreviousScoreUpdates(prevUpdates => [...prevUpdates, { 
           totalRuns: eventData.total_runs,
           totalWickets: eventData.total_wickets,
@@ -324,6 +589,34 @@ function ScoringInterface() {
         if (ballInOver === 5) {
           setIsNewBowlerPopupVisible(true)
         }
+
+        if (eventData.runs == 1 || eventData.runs == 3) {
+          handleStrikeChangeRuns()
+        }
+
+        fetchMatchDetails(
+          matchId, 
+          token, 
+          setMatchDetails, 
+          setTossWinner, 
+          setTossElected, 
+          setMatchStatus, 
+          setBattingTeamPlayers, 
+          setBowlingTeamPlayers, 
+          setTotalRuns, 
+          setTotalWickets, 
+          setOver, 
+          setBallInOver, 
+          setStriker, 
+          setStrikerData, 
+          setNonStriker, 
+          setNonStrikerData, 
+          setSelectedBowler, 
+          setSelectedBowlerData, 
+          setIsSelectionDone, 
+          checkForMissingInfo,
+          setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+        );
       })
       .catch(error => {
         console.error("Error updating score:", error);
@@ -332,7 +625,6 @@ function ScoringInterface() {
   }
 
   const handleExtraSubmit = (type) => {
-    console.log( 'extra' ,runsOnExtra)
     const eventData = {
       match_id: matchId,
       onstrike: striker.id,
@@ -345,19 +637,38 @@ function ScoringInterface() {
       how_out: '',
       people_involved: '',
       runs: noBallBatterRun,
-      extras: runsOnExtra,
+      extras: runsOnExtra + 1,
       extras_type: type,
-      innings: innings
+      innings: innings,
+      who_out : whoOut,
+      wides : wides,
+      noBalls : noBalls,
+      legbyes : legbyes,
+      byes : byes,
+      total_extras : total_extras,
+      runs_inover : runs_inover,
+      wickets_inover : wickets_inover
     };
 
-    if (eventData.extras_type === 'lb' || eventData.extras_type === 'bye') {
+    if (eventData.extras_type === 'lb') {
       eventData.ball_in_over += 1;
+      eventData.legbyes += 1
+    }
+
+    if (eventData.extras_type === 'bye') {
+      eventData.ball_in_over += 0;
+      eventData.byes += runsOnExtra
     }
 
     if (eventData.extras_type === 'nb') {
-      eventData.total_runs += noBallBatterRun
+      eventData.total_runs += noBallBatterRun + 1
+      eventData.noBalls += 1
     }
 
+    if (eventData.extras_type === 'wd') {
+      eventData.total_runs += 1
+      eventData.wides += 1
+    }
 
     axios.post(`${baseURL}/api/update-score/`, eventData, {
       headers: {
@@ -367,6 +678,7 @@ function ScoringInterface() {
       },
     })
     .then(response => {
+  // Save the current score update in the history////////////////////   undo current   /////////////////////////////////////////////////////
       setPreviousScoreUpdates(prevUpdates => [...prevUpdates, { 
         totalRuns: eventData.total_runs,
         totalWickets: eventData.total_wickets,
@@ -374,7 +686,7 @@ function ScoringInterface() {
         ballInOver: eventData.ball_in_over 
       }]);
       console.log(eventData.extras, eventData.extras_type)
-      if (eventData.extras_type === 'lb' || eventData.extras_type === 'bye') {
+      if (eventData.extras_type === 'lb') {
         setBallInOver(ballInOver + 1);
         if (ballInOver >= 5) {
           setOver(over + 1);
@@ -382,7 +694,7 @@ function ScoringInterface() {
         }
       }  
       ///////////////////////////////// New Bowler condition after over completed
-      if (ballInOver === 5) {
+      if (ballInOver === 5 && eventData.extras_type != 'wd' && eventData.extras_type != 'nb' && eventData.extras_type != 'bye') {
         console.log('dig')
         setIsNewBowlerPopupVisible(true)
       }
@@ -390,7 +702,40 @@ function ScoringInterface() {
       setIsNoBallPopupVisible(false);
       setIsLbPopupVisible(false);
       setIsByePopupVisible(false);
+      
+      if (runsOnExtra == 1 || runsOnExtra == 3) {
+        handleStrikeChangeRuns()
+      }
+      if (eventData.runs > 0 && eventData.runs % 2 != 0) {
+        handleStrikeChangeRuns()
+      }
+
+
       setRunsOnExtra(0);
+
+      fetchMatchDetails(
+        matchId, 
+        token, 
+        setMatchDetails, 
+        setTossWinner, 
+        setTossElected, 
+        setMatchStatus, 
+        setBattingTeamPlayers, 
+        setBowlingTeamPlayers, 
+        setTotalRuns, 
+        setTotalWickets, 
+        setOver, 
+        setBallInOver, 
+        setStriker, 
+        setStrikerData, 
+        setNonStriker, 
+        setNonStrikerData, 
+        setSelectedBowler, 
+        setSelectedBowlerData, 
+        setIsSelectionDone, 
+        checkForMissingInfo, 
+        setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+      );
     })
     .catch(error => {
       console.error("Error updating score:", error);
@@ -440,8 +785,20 @@ function ScoringInterface() {
         extras: 0,
         extras_type: '',
         innings: innings,
-        who_out: whoOut
+        who_out: whoOut,
+        wides : wides,
+        noBalls : noBalls,
+        legbyes : legbyes,
+        byes : byes,
+        total_extras : total_extras,
+        runs_inover : runs_inover,
+        wickets_inover : wickets_inover
     };
+
+    if (outType != 'run_out') {
+      eventData.who_out = striker.id
+    }
+
     console.log('this is' ,whoOut)
     console.log('direct',eventData.who_out)
     axios.post(`${baseURL}/api/update-score/`, eventData, {
@@ -465,7 +822,44 @@ function ScoringInterface() {
           console.log('dig')
           setIsNewBowlerPopupVisible(true)
         }
+
+        if (eventData.how_out != 'run_out') {
+          setStriker({ id: '', name: '' })
+        }
+
+        if (eventData.how_out === 'run_out') {
+          if (striker.id === whoOut) {
+            setStriker({ id: '', name: '' });
+          } else if (nonStriker.id === whoOut) {
+            setNonStriker({ id: '', name: '' });
+          }
+        }      
+
         setIsSelectionDone(false)
+
+        fetchMatchDetails(
+          matchId, 
+          token, 
+          setMatchDetails, 
+          setTossWinner, 
+          setTossElected, 
+          setMatchStatus, 
+          setBattingTeamPlayers, 
+          setBowlingTeamPlayers, 
+          setTotalRuns, 
+          setTotalWickets, 
+          setOver, 
+          setBallInOver, 
+          setStriker, 
+          setStrikerData, 
+          setNonStriker, 
+          setNonStrikerData, 
+          setSelectedBowler, 
+          setSelectedBowlerData, 
+          setIsSelectionDone, 
+          checkForMissingInfo,
+          setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+        );
     })
     .catch(error => {
         console.error("Error updating score:", error);
@@ -486,6 +880,11 @@ function ScoringInterface() {
   };
 
 ////////////////////////////////////////// Striker Change /////////////////////////////////////////////
+
+
+  const handleStrikeChangeRuns = () => {
+    updateStrikerAndNonStriker(nonStriker.id, striker.id)
+  }
 
   const handleStrikeChange = () => {
       const userConfirmed = window.confirm('Do you want to change the strike?');
@@ -545,7 +944,31 @@ function ScoringInterface() {
     .then(response => {
       showNotification(response.data.message);
       setSelectedBowler(newBowler);  // Update the selected bowler state
+      console.log('yesman')
       setNewBowler({ id: '', name: '' });  // Reset the new bowler state
+      fetchMatchDetails(
+        matchId, 
+        token, 
+        setMatchDetails, 
+        setTossWinner, 
+        setTossElected, 
+        setMatchStatus, 
+        setBattingTeamPlayers, 
+        setBowlingTeamPlayers, 
+        setTotalRuns, 
+        setTotalWickets, 
+        setOver, 
+        setBallInOver, 
+        setStriker, 
+        setStrikerData, 
+        setNonStriker, 
+        setNonStrikerData, 
+        setSelectedBowler, 
+        setSelectedBowlerData, 
+        setIsSelectionDone, 
+        checkForMissingInfo, 
+        setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+      );
     })
     .catch(error => {
       console.error("Error updating bowler:", error);
@@ -576,6 +999,31 @@ function ScoringInterface() {
         } else {
           setStriker(player);
         }
+
+        fetchMatchDetails(
+          matchId, 
+          token, 
+          setMatchDetails, 
+          setTossWinner, 
+          setTossElected, 
+          setMatchStatus, 
+          setBattingTeamPlayers, 
+          setBowlingTeamPlayers, 
+          setTotalRuns, 
+          setTotalWickets, 
+          setOver, 
+          setBallInOver, 
+          setStriker, 
+          setStrikerData, 
+          setNonStriker, 
+          setNonStrikerData, 
+          setSelectedBowler, 
+          setSelectedBowlerData, 
+          setIsSelectionDone, 
+          checkForMissingInfo, 
+          setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+        );
+
       } else {
         console.error('Failed to update player status');
       }
@@ -586,8 +1034,33 @@ function ScoringInterface() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  const handleinningsendSubmit = () =>{
+    handleInningsChange();
+    setIsSelectionDone(false)
+    setInningsEndModalVisible(false)
+  }
+
   return (
     <div className='relative bg-[url("images/ScoringBack2.png")] bg-cover bg-center h-screen'>
+      {/* {console.log('striker', {strikerData} , {nonStrikerData}, {selectedBowlerData}, 'over', {over})} */}
+      {isResultModalVisible && 
+        <ResultModel result={result} onClose={() => setIsResultModalVisible(false)} />
+      }
+      {isInningsEndModalVisible &&
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+          <div className="bg-white text-black p-8 rounded-lg shadow-lg w-1/2">
+            <h2 className="text-2xl font-bold mb-4">First Innings End</h2>
+            <p className="text-lg mb-6">{totalRuns}/{totalWickets}<span className="text-lg pl-2">({over}.{ballInOver})</span></p>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={handleinningsendSubmit}
+            >
+              Start Second Innings
+            </button>
+          </div>
+        </div>
+      }
+      
       <div className="absolute inset-0 bg-black opacity-50 z-10"></div>
       <div className="relative z-20 w-full h-full text-white">
         <div className="flex flex-col items-center pt-32">
@@ -597,6 +1070,12 @@ function ScoringInterface() {
           <p className="text-lg pl-2 pt-3">
             <span>{tossWinner}</span> won the toss and elected to <span>{tossElected}</span>
           </p>
+          {innings !=1 &&  
+            <p className="text-lg pl-2 pt-3">
+              <span>{away_team.name} </span>need <span>{first_innings_total - totalRuns + 1} </span>{}<span>runs to win</span>
+            </p>
+          }
+          
         </div>
         <div className="flex flex-col items-center justify-center">
           {!isSelectionDone && (
@@ -613,6 +1092,8 @@ function ScoringInterface() {
               missingInfo={missingInfo}
               updatePlayerInfo={updatePlayerInfo}
               handleBatterChange={handleBatterChange}
+              setNewBowler={setNewBowler}
+              handleBowlerChange={handleBowlerChange}
             />
           )}
 
@@ -644,17 +1125,15 @@ function ScoringInterface() {
                 <p>{selectedBowler.name}</p>
               </div>
               <div className="pr-4">
-                <p>{selectedBowlerData ? selectedBowlerData.bowling_overs : 0}.{ballInOver}-{selectedBowlerData ? selectedBowlerData.bowling_maiden_overs : 0}-{selectedBowlerData ? selectedBowlerData.bowling_runs_conceded : 0}-{selectedBowlerData ? selectedBowlerData.bowling_wickets : 0}</p>
+                <p>{selectedBowlerData ? selectedBowlerData.bowling_overs : 0}-{selectedBowlerData ? selectedBowlerData.bowling_maiden_overs : 0}-{selectedBowlerData ? selectedBowlerData.bowling_runs_conceded : 0}-{selectedBowlerData ? selectedBowlerData.bowling_wickets : 0}</p>
               </div>
             </div>
-            <div className="flex pl-4 py-3">
-              {previousScoreUpdates.map((update, index) => (
-                <div key={index} className="w-10 h-10 bg-white rounded-full text-black flex justify-center items-center mr-3">
-                  {update.runs !== undefined ? update.runs : 
-                  update.extras_type === 'wide' ? 'WD' : 
-                  update.extras_type === 'no_ball' ? 'NB' : 
-                  update.extras_type === 'bye' ? 'BYE' : 
-                  update.how_out ? 'W' : ''}
+            <div className="flex flex-wrap">
+              {currentOverEvents.map((event, index) => (
+                <div key={index} className="flex pl-2 py-3">
+                  <p className="w-10 h-10 bg-white rounded-full text-black flex justify-center items-center mr-3">
+                    {event.extras_type ? event.extras_type.toUpperCase() : (event.how_out ? 'OUT' : event.runs)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -693,7 +1172,7 @@ function ScoringInterface() {
               <div className="popup fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
                 <div className="bg-white p-4 rounded shadow-md text-black">
                   <h3 className="text-xl mb-2">No Ball - Select Runs Scored</h3>
-                  <select className="border p-2 w-full mb-2" value={runsOnExtra} onChange={e => setnoBallBatterRun(parseInt(e.target.value, 10))}>
+                  <select className="border p-2 w-full mb-2" value={noBallBatterRun} onChange={e => setnoBallBatterRun(parseInt(e.target.value, 10))}>
                     <option value="">Select Runs</option>
                     {[0, 1, 2, 3, 4, 5, 6, 7].map((run, index) => (
                       <option key={index} value={run}>{run}</option>
@@ -785,23 +1264,23 @@ function ScoringInterface() {
                     onChange={(e) => {
                       const selectedValue = e.target.value;
                       const selectedPlayer = bowlingTeamPlayers.find(player => player.id.toString() === selectedValue);
-                      console.log(selectedPlayer)
                       setNewBowler({ id: selectedPlayer ? selectedPlayer.id : '', name: selectedPlayer ? selectedPlayer.name : '' });
-                      console.log(selectedBowler)
                     }}
                     className="border rounded-md p-1 ml-2"
                   >
                     <option value="">Select a bowler</option>
-                    {bowlingTeamPlayers.map(player => (
-                      <option key={player.id} value={player.id}>{player.name}</option>
-                    ))}
+                    {bowlingTeamPlayers
+                      .filter(player => player.id !== previousBowler) // Filter out the previous bowler
+                      .map(player => (
+                        <option key={player.id} value={player.id}>{player.name}</option>
+                      ))}
                   </select>
                   <div className="flex justify-end mt-4">
                     <button
                       type="button"
                       className="px-4 py-2 bg-gray-500 text-black rounded-md ml-2"
                       onClick={() => {
-                        handleBowlerChange(newBowler);  // Pass newBowler directly
+                        handleBowlerChange(newBowler); // Pass newBowler directly
                         setIsNewBowlerPopupVisible(false);
                       }}
                     >
@@ -811,6 +1290,7 @@ function ScoringInterface() {
                 </div>
               </div>
             )}
+
 
             {isNewBatterPopupVisible && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
@@ -827,7 +1307,7 @@ function ScoringInterface() {
                 </div>
               </div>
             )}
-            
+
           </div>
         </div>
       </div>

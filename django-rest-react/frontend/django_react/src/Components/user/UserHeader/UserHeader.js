@@ -76,11 +76,13 @@ function UserHeader() {
             </li>
           </button>
           {username && (
-            <li className="px-1">
-              <a href="/past-matches" className="px-2 font-sans font-semibold text-sm text-slate-600">
-                PAST MATCHES
-              </a>
-            </li>
+            <button onClick={() => {navigate('/past-matches')}}>
+              <li className="px-1">
+                <p className="px-2 font-sans font-semibold text-sm text-slate-600">
+                  PAST MATCHES
+                </p>
+              </li>
+            </button>
           )}
           {username !== null && (
             <li className="px-1">

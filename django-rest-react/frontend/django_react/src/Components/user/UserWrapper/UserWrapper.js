@@ -18,6 +18,7 @@ import MatchCreationForm from "../../../pages/Match/MatchCreationForm";
 import MatchDetails from "../../../pages/Match/MatchDetails";
 import ScoringInterface from "../../../pages/Match/ScoringInterface";
 import UserScoringInterface from "../../../pages/Match/UserScoringInterface";
+import PastMatches from "../../../pages/Match/PastMatches";
 
 
 
@@ -108,7 +109,7 @@ function UserWrapper() {
             </PrivateRoute>}>
           </Route>
           
-          <Route  path="match-details" element={
+          <Route  path="match-details/:matchId" element={
             <PrivateRoute>
               <MatchDetails />
             </PrivateRoute>}>
@@ -123,6 +124,12 @@ function UserWrapper() {
           <Route  path="scoring-interface/:matchId" element={
             <PrivateRoute>
               <ScoringInterface />
+            </PrivateRoute>}>
+          </Route>
+
+          <Route  path="past-matches" element={
+            <PrivateRoute>
+              <PastMatches />
             </PrivateRoute>}>
           </Route>
 

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import SummaryContent from './SummaryContent';
 import ScoreCard from './ScoreCard';
 import Commentry from './Commentry';
@@ -9,25 +11,67 @@ import LiveScore from './LiveScore'
 
 function MatchDetails() {
   const [selectedSection, setSelectedSection] = useState('summary');
+  const { matchId } = useParams();
+  const navigate = useNavigate();
+  const token = localStorage.getItem('access');
+  const baseURL = 'http://127.0.0.1:8000';
+  const [matchData, setMatchData] = useState(null);
+  const [batsfirst, setBatsFirst] = useState('')
+
+
+  useEffect(() => {
+    axios.get(`${baseURL}/api/scorecard-match-detail/${matchId}/`, {
+      headers: {
+        authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        setMatchData(response.data);
+        if (response.data.match_details.toss_winner) {
+          const { toss_winner, elected_to } = response.data.match_details;
+          if (toss_winner === 'home') {
+            setBatsFirst(elected_to === 'bat' ? 'home' : 'away');
+          } else if (toss_winner === 'away') {
+            setBatsFirst(elected_to === 'bat' ? 'away' : 'home');
+          }
+        }
+      })
+      .catch((error) => {
+        console.error('There was an error fetching the match details!', error);
+      });
+      }, [matchId, token]);
+
+  if (!matchData) {
+    return <div>Loading...</div>;
+  }
+
+
+  const { match_details, home_team, away_team, last_ball_innings1, last_ball_innings2 } = matchData;
 
   const renderSection = () => {
     switch (selectedSection) {
       case 'live':
         return <LiveScore />;
+      case 'summary':
+        return <SummaryContent matchId={matchId}/>
       case 'scorecard':
-        return <ScoreCard />
+        return <ScoreCard matchId={matchId}/>
       case 'commentary':
-        return <Commentry />
+        return <Commentry matchId={matchId}/>
       case 'cricheros':
-        return <CricHeros />
+        return <CricHeros matchId={matchId}/>
       case 'mvp':
-        return <MVP />
+        return <MVP matchId={matchId}/>
       case 'teams':
-        return <Teams />
+        return <Teams matchId={matchId}/>
       default:
         return <div>Summary Content</div>;
     }
   };
+
+
 
   return (
     <>
@@ -36,31 +80,43 @@ function MatchDetails() {
           <div className='w-3/5 m-1 h-11/12'>
             <div className='bg-white h-auto border rounded-md'>
               <div className='flex flex-row items-center'>
-                <p className='mt-5 text-teal-600 pl-4'>Trichur DCA C Division League 2023-24 (League Matches)</p>
+                <p className='mt-5 text-teal-600 pl-4 text-xl font-bold'>{home_team.team_name} vs {away_team.team_name}</p>
                 <div className='ml-auto flex items-center mt-5 mr-5'>
-                  <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>past</span>
+                <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>{match_details.status}</span>
                 </div>
               </div>
-              <p className='mt-1 text-teal-600 pl-4'>Baijus Cricket Ground, 18 Ov., 10-May-24 02:48 PM</p>
-              <p className='mt-2 pl-4'>Toss: Baiju's Cricket Academy opt to field</p>
+              <p className='mt-1 text-teal-600 pl-4'>Ground : {match_details.ground_location == 'home' ? home_team.home_ground : away_team.home_ground}, {match_details.overs} overs match , {match_details.date}</p>
+              <p className='mt-2 pl-4'>Toss: {match_details.batting_first === 'home' && 
+                match_details.elected_to === 'bat'
+                  ? `${home_team.team_name} opt to bat`
+                  : `${home_team.team_name} opt to field`}
+
+                {match_details.batting_first === 'away' && match_details.elected_to === 'bat'
+                  ? `${away_team.team_name} opt to bat`
+                  : `${away_team.team_name} opt to field`}
+        
+              </p>
+
               <div className='flex justify-between items-center mt-3 pl-4'>
-                <p className='font-bold'>EXPLORER CRICKET CLUB</p>
+                <p className='font-bold'>{batsfirst === 'home' ? home_team.team_name : away_team.team_name}</p>
                 <div className='flex items-center justify-center mr-5'>
-                  <p className='font-bold text-2xl mr-1'>149/9</p>
-                  <p>(18.0 Ov)</p>
+                  <p className='font-bold text-2xl mr-1'>{matchData.last_ball_innings1.total_runs}/{matchData.last_ball_innings1.total_wickets}</p>
+                  <p>({matchData.last_ball_innings1.balls === 6 ? matchData.last_ball_innings1.overs + 1 : matchData.last_ball_innings1.overs}.{matchData.last_ball_innings1.balls === 6 ? 0 : matchData.last_ball_innings1.balls})</p>
                 </div>
               </div>
+
               <div className='flex justify-between items-center mt-3 pl-4'>
-                <p className='font-bold'>BAIJU'S CRICKET ACADEMY</p>
+                <p className='font-bold'>{batsfirst === 'home' ? home_team.team_name : away_team.team_name}</p>
                 <div className='flex items-center justify-center mr-5'>
-                  <p className='font-bold text-2xl mr-1'>152/9</p>
-                  <p>(16.5 Ov)</p>
+                  <p className='font-bold text-2xl mr-1'>{matchData.last_ball_innings2.total_runs}/{matchData.last_ball_innings2.total_wickets}</p>
+                  <p>({matchData.last_ball_innings2.balls === 6 ? matchData.last_ball_innings2.overs + 1 : matchData.last_ball_innings2.overs}.{matchData.last_ball_innings2.balls === 6 ? 0 : matchData.last_ball_innings2.balls})</p>
                 </div>
               </div>
-              <p className='my-4 pl-4'>Baiju's Cricket Academy won by 1 wickets</p>
+
+              <p className='my-4 pl-4'>{match_details.result}</p>
               <div className='h-12 w-full bg-slate-200 rounded-b-lg border-t flex justify-center items-center'>
                 <nav className='flex justify-around w-full'>
-                  <button className={selectedSection === 'live' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('live')}>Live</button>
+                  <button className={selectedSection === 'summary' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('summary')}>Summary</button>
                   <button className={selectedSection === 'scorecard' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('scorecard')}>Scorecard</button>
                   <button className={selectedSection === 'commentary' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('commentary')}>Commentary</button>
                   <button className={selectedSection === 'cricheros' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('cricheros')}>Cricheros</button>
@@ -81,19 +137,19 @@ function MatchDetails() {
             </div>
             <div className='bg-white rounded-md mt-4'>
               <div className='border-b p-2'>
-                <p className='pl-3 font-medium text-lg'>Match Details</p>
+                <p className='pl-3 font-medium text-lg'>Match Name</p>
               </div>
               <div className='pl-2 py-2'>
-                <p className='pl-3 font-medium'>Series Name</p>
-                <p className='pl-3 text-teal-600 font-medium'>Trichur DCA C Division League 2023-24</p>
+                <p className='pl-3 font-medium'>{home_team.team_name} vs {away_team.team_name}</p>
+                <p className='pl-3 text-teal-600 font-medium'>Friendly Match</p>
               </div>
               <div className='pl-2 py-2'>
                 <p className='pl-3 font-medium'>Match Date</p>
-                <p className='pl-3 font-medium'>18/05/2024</p>
+                <p className='pl-3 font-medium'>{match_details.date}</p>
               </div>
               <div className='pl-2 py-2'>
                 <p className='pl-3 font-medium'>Location</p>
-                <p className='pl-3 text-teal-600 font-medium'>NTC Ground, Amballur, Thrissur</p>
+                <p className='pl-3 text-teal-600 font-medium'>{match_details.ground_location == 'home' ? home_team.home_ground : away_team.home_ground}</p>
               </div>
             </div>
           </div>

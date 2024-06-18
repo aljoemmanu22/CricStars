@@ -5,7 +5,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from match.models import Match
-from .serializers import MatchSerializer, MatchDetailSerializer
+from .serializers import MatchSerializer, MatchDetailSerializer, TeamSerializer, BatterSerializer, BowlerSerializer, BallByBallSerializer, MatchTeamPlayerSerializerr, BallByBallCommentarySerializer
 from match.serializers import MatchTeamPlayerSerializer
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import User
@@ -13,6 +13,7 @@ from rest_framework import generics, status
 from match.models import Match, MatchTeamPlayer
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
+from django.db.models import F, FloatField, ExpressionWrapper
 
 from django.http import JsonResponse
 from scoring.models import BallByBall
@@ -45,7 +46,171 @@ class MatchesViewSet(viewsets.ModelViewSet):
             'live_matches': live_serializer.data,
             'scheduled_matches': scheduled_serializer.data
         })
+    
+    @action(detail=False, methods=['get'], url_path='scorecard-past')
+    def get_past_matches(self, request):
+        past_matches = Match.objects.filter(status='past')
+        past_serializer = MatchSerializer(past_matches, many=True)
+        
+        enhanced_matches = []
+        for match in past_matches:
+            last_ball_innings1 = BallByBall.objects.filter(match_id=match, innings=1).order_by('-over', '-ball_in_over').first()
+            last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=2).order_by('-over', '-ball_in_over').first()
+        # If innings 2 does not exist, try to get the last ball of innings 3
+            if not last_ball_innings2:
+                last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=3).order_by('-over', '-ball_in_over').first()
+            match_data = {
+                'match': MatchSerializer(match).data,
+                'last_ball_innings1': {
+                    'total_runs': last_ball_innings1.total_runs,
+                    'total_wickets': last_ball_innings1.total_wickets,
+                    'overs': last_ball_innings1.over,
+                    'balls': last_ball_innings1.ball_in_over,
+                } if last_ball_innings1 else None,
+                'last_ball_innings2': {
+                    'total_runs': last_ball_innings2.total_runs,
+                    'total_wickets': last_ball_innings2.total_wickets,
+                    'overs': last_ball_innings2.over,
+                    'balls': last_ball_innings2.ball_in_over,
+                } if last_ball_innings2 else None,
+            }
+            enhanced_matches.append(match_data)
+        
+        return Response({
+            'past_matches': enhanced_matches,
+        })
+    
+    
 
+@api_view(['POST'])
+def handleStartMatch(request):
+    try:
+        data = request.data
+        match_id = data.get('match_id')
+        if not match_id:
+            return Response({'error': 'Match ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        match = Match.objects.get(id=match_id)
+        match.status = 'live'
+        match.innings = 1
+        match.save()
+
+        return Response({'message': 'Match started successfully'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def handleInningsChange(request):
+    try:
+        data = request.data
+        match_id = data.get('match_id')
+        if not match_id:
+            return Response({'error': 'Match ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        match = Match.objects.get(id=match_id)
+        if match.innings == 1:
+            match.innings += 1
+        match.save()
+        print('done')
+
+        # Reset is_striker and is_non_striker fields for all players
+        players = MatchTeamPlayer.objects.filter(match_id=match_id)
+        players.update(is_striker=False, is_non_striker=False, is_bowling=False)
+
+        return Response({'message': 'Innings changed successfully'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def handleEndMatch(request):
+    try:
+        data = request.data
+        print("Incoming data:", data)  # Add logging to check incoming data
+        match_id = data.get('match_id')
+        result = data.get('result')
+
+        if not match_id:
+            return Response({'error': 'Match ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not result:
+            return Response({'error': 'Match result is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            match = Match.objects.get(id=match_id)
+        except Match.DoesNotExist:
+            return Response({'error': 'Match not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        match.status = 'past'
+        match.result = result
+        match.save()
+
+        match_players = MatchTeamPlayer.objects.filter(match_id=match_id)
+
+        for player in match_players:
+            user = player.player_id
+
+            # Ensure fields are initialized
+            user.batting_total_runs_scored = user.batting_total_runs_scored or 0
+            user.batting_inning = user.batting_inning or 0
+            user.batting_high_score = user.batting_high_score or 0
+            user.batting_total_balls_faced = user.batting_total_balls_faced or 0
+            user.batting_100s = user.batting_100s or 0
+            user.batting_50s = user.batting_50s or 0
+            user.bowling_total_overs_bowled = user.bowling_total_overs_bowled or 0
+            user.bowling_runs_conceded = user.bowling_runs_conceded or 0
+            user.bowling_wickets = user.bowling_wickets or 0
+            user.bowling_best_figures = user.bowling_best_figures or 'NA'
+            user.bowling_5ws = user.bowling_5ws or 0
+
+            # Update batting statistics
+            if player.is_batted:
+                user.batting_total_runs_scored += player.batting_runs_scored or 0
+                user.batting_inning += 1
+                if player.batting_runs_scored > user.batting_high_score:
+                    user.batting_high_score = player.batting_runs_scored
+                user.batting_total_balls_faced += player.batting_balls_faced or 0
+
+                # Update batting 50s and 100s
+                if player.batting_runs_scored >= 100:
+                    user.batting_100s += 1
+                elif player.batting_runs_scored >= 50:
+                    user.batting_50s += 1
+
+            # Update bowling statistics
+            if player.is_bowled:
+                user.bowling_total_overs_bowled += player.bowling_overs or 0
+                user.bowling_runs_conceded += player.bowling_runs_conceded or 0
+                user.bowling_wickets += player.bowling_wickets or 0
+
+                # Update bowling best figures
+                current_best_figures = user.bowling_best_figures.split('/')
+                if current_best_figures[0] == 'NA' or player.bowling_wickets > int(current_best_figures[0]) or (player.bowling_wickets == int(current_best_figures[0]) and player.bowling_runs_conceded < int(current_best_figures[1])):
+                    user.bowling_best_figures = f"{player.bowling_wickets}/{player.bowling_runs_conceded}"
+
+                # Update 5-wicket hauls
+                if player.bowling_wickets >= 5:
+                    user.bowling_5ws += 1
+
+            # Recalculate averages and strike rates
+            if user.batting_total_balls_faced > 0:
+                user.batting_strike_rate = (user.batting_total_runs_scored / user.batting_total_balls_faced) * 100
+            if user.batting_inning > 0:
+                user.batting_average = user.batting_total_runs_scored / user.batting_inning
+
+            if user.bowling_total_overs_bowled > 0:
+                user.bowling_economy = user.bowling_runs_conceded / user.bowling_total_overs_bowled
+            if user.bowling_wickets > 0:
+                user.bowling_average = user.bowling_runs_conceded / user.bowling_wickets
+                user.bowling_strike_rate = user.bowling_total_overs_bowled / user.bowling_wickets
+
+            user.save()
+
+        return Response({'success': 'Match ended and statistics updated'}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print("Error ending match:", str(e))
+        return Response({'error': 'An error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # views.py
 class MatchDetailView(generics.RetrieveAPIView):
@@ -71,7 +236,7 @@ class MatchDetailView(generics.RetrieveAPIView):
                 'is_striker': player.is_striker,
                 'is_non_striker': player.is_non_striker,
                 'is_bowling': player.is_bowling,
-                'is_batted' : player.is_bowling,
+                'is_batted' : player.is_batted,
                 'is_bowled' : player.is_bowled
             })
 
@@ -125,8 +290,9 @@ class MatchDetailView(generics.RetrieveAPIView):
             current_non_striker_data = None
             current_bowler_data = None
 
+        innings = match.innings
         # Fetch the last ball data for the current match
-        last_ball = BallByBall.objects.filter(match_id=match_id).order_by('-id').first()
+        last_ball = BallByBall.objects.filter(match_id=match_id, innings=innings).order_by('-id').first()
         if last_ball:
             last_ball_data = {
                 'onstrike': last_ball.onstrike,
@@ -141,10 +307,64 @@ class MatchDetailView(generics.RetrieveAPIView):
                 'runs': last_ball.runs,
                 'extras': last_ball.extras,
                 'extras_type': last_ball.extras_type,
-                'innings': last_ball.innings
+                'innings': last_ball.innings,
+                'wides':last_ball.wides,
+                'noBalls':last_ball.noBalls,
+                'legbyes':last_ball.legbyes,
+                'byes':last_ball.byes,
+                'total_extras':last_ball.total_extras,
+                'runs_inover':last_ball.runs_inover,
+                'wickets_inover':last_ball.wickets_inover
             }
         else:
             last_ball_data = None
+
+        # Fetch the events for the current over
+        current_over_events = BallByBall.objects.filter(match_id=match_id, innings=innings, over=last_ball.over if last_ball else 0).order_by('ball_in_over')
+        current_over_data = [
+            {
+                'runs': event.runs,
+                'extras': event.extras,
+                'extras_type': event.extras_type,
+                'how_out': event.how_out,
+            }
+            for event in current_over_events
+        ]
+
+        first_innings_last_ball = None
+        if match.innings != 1:
+            first_innings_last_ball = BallByBall.objects.filter(match_id=match_id, innings=1).order_by('-id').first()
+            if first_innings_last_ball:
+                first_innings_last_ball = {
+                    'onstrike': first_innings_last_ball.onstrike,
+                    'offstrike': first_innings_last_ball.offstrike,
+                    'bowler': first_innings_last_ball.bowler,
+                    'over': first_innings_last_ball.over,
+                    'ball_in_over': first_innings_last_ball.ball_in_over,
+                    'total_runs': first_innings_last_ball.total_runs,
+                    'total_wickets': first_innings_last_ball.total_wickets,
+                    'how_out': first_innings_last_ball.how_out,
+                    'people_involved': first_innings_last_ball.people_involved,
+                    'runs': first_innings_last_ball.runs,
+                    'extras': first_innings_last_ball.extras,
+                    'extras_type': first_innings_last_ball.extras_type,
+                    'innings': first_innings_last_ball.innings,
+                    'wides':first_innings_last_ball.wides,
+                    'noBalls':first_innings_last_ball.noBalls,
+                    'legbyes':first_innings_last_ball.legbyes,
+                    'byes':first_innings_last_ball.byes,
+                    'total_extras':first_innings_last_ball.total_extras,
+                    'runs_inover':first_innings_last_ball.runs_inover,
+                    'wickets_inover':first_innings_last_ball.wickets_inover
+                }
+            else:
+                first_innings_last_ball = None
+        
+        first_innings_total = 0
+        if innings == 2:
+            first_innings_total_runs = BallByBall.objects.filter(match_id=match_id, innings=1).order_by('-id').first()
+            if first_innings_total_runs:
+                first_innings_total = first_innings_total_runs.total_runs
 
         match_data = {
             'match': MatchDetailSerializer(match).data,
@@ -161,10 +381,13 @@ class MatchDetailView(generics.RetrieveAPIView):
             'current_striker': current_striker_data,
             'current_non_striker': current_non_striker_data,
             'current_bowler': current_bowler_data,
-            'last_ball': last_ball_data
+            'last_ball': last_ball_data,
+            'current_over': current_over_data,
+            'first_innings_last_ball': first_innings_last_ball,
+            'first_innings_total': first_innings_total
         }
         return Response(match_data)
-
+    
 
 
 @api_view(['POST'])
@@ -265,51 +488,83 @@ def live_scorecard(request, match_id):
     return JsonResponse(response_data)
 
 
-
-
-
 import logging
 from rest_framework.parsers import JSONParser
 from django.db import connection
+from django.db import transaction
+
 
 logger = logging.getLogger(__name__)
 
-@api_view(['POST'])
-def update_score(request):
+
+@transaction.atomic
+@api_view(['POST']) 
+def update_score(request): 
     try:
         data = JSONParser().parse(request)
         logger.debug(f'Received data: {data}')
         
-        match_id = data.get('match_id')
-        onstrike = data.get('onstrike')
-        offstrike = data.get('offstrike')
-        bowler = data.get('bowler')
-        over = data.get('over')
-        ball_in_over = data.get('ball_in_over')
-        total_runs = data.get('total_runs')
-        total_wickets = data.get('total_wickets')
-        how_out = data.get('how_out')
-        people_involved = data.get('people_involved')
-        runs = data.get('runs')
-        extras = data.get('extras')
-        extras_type = data.get('extras_type')
-        innings = data.get('innings')
-        who_out = data.get('who_out')
+        # Extract and convert data fields to appropriate types
+        try:
+            match_id = int(data.get('match_id'))
+            onstrike = int(data.get('onstrike'))
+            offstrike = int(data.get('offstrike'))
+            bowler = int(data.get('bowler'))
+            over = int(data.get('over'))
+            ball_in_over = int(data.get('ball_in_over'))
+            total_runs = int(data.get('total_runs'))
+            total_wickets = int(data.get('total_wickets'))
+            how_out = data.get('how_out', '')
+            people_involved = data.get('people_involved', '')
+            runs = int(data.get('runs'))
+            extras = int(data.get('extras'))
+            extras_type = data.get('extras_type', '')
+            innings = int(data.get('innings'))
+            who_out = data.get('who_out', '')
+            wides = int(data.get('wides'))
+            noBalls = int(data.get('noBalls'))
+            legbyes = int(data.get('legbyes'))
+            byes = int(data.get('byes'))
+            total_extras = int(data.get('total_extras'))
+            runs_inover = int(data.get('runs_inover'))
+            wickets_inover = int(data.get('wickets_inover'))
+        except (ValueError, TypeError) as e:
+            logger.error(f'Data conversion error: {e}')
+            return Response({'error': f'Data conversion error: {e}'}, status=status.HTTP_400_BAD_REQUEST)
+    
+        if extras_type:
+            total_extras += extras
 
+        if extras_type and ball_in_over != 1:
+            runs_inover += extras
         
+        if how_out and ball_in_over != 1:
+            wickets_inover += 1
+            
         if not (match_id and onstrike and bowler and over is not None and ball_in_over is not None):
             return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Fetch the Match instance
         match = Match.objects.get(id=match_id)
+
+        if ball_in_over == 1 and over != 0:
+            prev_ball = BallByBall.objects.filter(match_id=match).order_by('-over', '-ball_in_over').first()
+            if prev_ball:
+                if prev_ball.ball_in_over == 1:
+                    runs_inover += runs
+                else:
+                    runs_inover = runs
+                    if extras_type:
+                        runs_inover += extras
+                if how_out:
+                    wickets_inover = 1
+                else:
+                    wickets_inover = 0
+
         if match.status != 'live':
             match.status = 'live'
             match.save()
 
-        
-
-        if extras_type != 'wd' and extras_type != 'nb':
-            # Create or update the BallByBall entry
+        if extras_type not in ['wd', 'nb', 'bye']:
             ball, created = BallByBall.objects.get_or_create(
                 match_id=match,
                 over=over,
@@ -326,30 +581,41 @@ def update_score(request):
                     'runs': runs,
                     'extras': extras,
                     'extras_type': extras_type,
-                    'who_out': who_out
+                    'who_out': who_out,
+                    'wides': wides,
+                    'noBalls': noBalls,
+                    'legbyes': legbyes,
+                    'byes': byes,
+                    'total_extras': total_extras
                 }
             )
         else:
+            if ball_in_over == 0:
+                ball_in_over += 1
             created = BallByBall.objects.create(
                 match_id=match,
                 over=over,
                 innings=innings,
-                onstrike = onstrike,
-                offstrike = offstrike,
-                bowler = bowler,
-                total_runs = total_runs,
-                total_wickets = total_wickets,
-                how_out = how_out,
-                people_involved = people_involved,
-                runs = runs,
-                extras = extras,
-                extras_type = extras_type,
-                ball_in_over = ball_in_over,
-                who_out = who_out
+                onstrike=onstrike,
+                offstrike=offstrike,
+                bowler=bowler,
+                total_runs=total_runs,
+                total_wickets=total_wickets,
+                how_out=how_out,
+                people_involved=people_involved,
+                runs=runs,
+                extras=extras,
+                extras_type=extras_type,
+                ball_in_over=ball_in_over,
+                who_out=who_out,
+                wides=wides,
+                noBalls=noBalls,
+                legbyes=legbyes,
+                byes=byes,
+                total_extras=total_extras
             )
 
         if not created:
-            # Update existing entry
             ball.onstrike = onstrike
             ball.offstrike = offstrike
             ball.bowler = bowler
@@ -362,85 +628,98 @@ def update_score(request):
             ball.extras_type = extras_type
             ball.over = over
             ball.ball_in_over = ball_in_over
+            ball.wides = wides
+            ball.noBalls = noBalls
+            ball.legbyes = legbyes
+            ball.byes = byes
+            ball.total_extras = total_extras
             ball.save()
-        
-        player = MatchTeamPlayer.objects.get(player_id=onstrike, match_id=match_id)
+
+        if not who_out:
+            player = MatchTeamPlayer.objects.get(player_id=onstrike, match_id=match_id)
+        else:
+            out_player = MatchTeamPlayer.objects.get(player_id=who_out, match_id=match_id)
         bowler_stats = MatchTeamPlayer.objects.get(player_id=bowler, match_id=match_id)
 
-        if ball_in_over == 6 and extras_type == '' or extras_type == 'lb':
-            bowler_stats.bowling_overs += 1
+        if not who_out:
+            if not player.is_batted:
+                player.is_batted = True
+            
+            if not bowler_stats.is_bowled:
+                bowler_stats.is_bowled = True
 
-        if player.is_batted != True:
-            player.is_batted = True
-        
-        if bowler_stats.is_bowled != True:
-            player.is_bowled = True
+            if runs == 0 and not extras_type:
+                player.batting_balls_faced += 1
+                player.save()
 
-        if runs == 0 and extras_type == '':
-            player.batting_balls_faced += 1
-            player.save()
-
-        if runs > 0 and extras_type == '':
-            player.batting_balls_faced += 1
-            player.batting_runs_scored += runs
-            if runs == 4:
-                player.batting_fours += 1
-                bowler_stats.bowling_fours += 1
-            if runs == 6:
-                player.batting_sixes += 1
-                bowler_stats.bowling_sixes += 1
-            player.save()
-            bowler_stats.bowling_runs_conceded += runs
-            bowler_stats.save()
-
-
-        # Handle extras
-        if extras or extras_type != '':
-            if extras_type == 'wide':
-                bowler_stats.bowling_wides += 1
-                bowler_stats.bowling_runs_conceded += 1
-            elif extras_type == 'no_ball':
-                bowler_stats.bowling_noballs += 1
-                bowler_stats.bowling_runs_conceded += 1 + runs
+            if runs > 0 and not extras_type:
+                player.batting_balls_faced += 1
                 player.batting_runs_scored += runs
+                if runs == 4:
+                    player.batting_fours += 1
+                    bowler_stats.bowling_fours += 1
+                if runs == 6:
+                    player.batting_sixes += 1
+                    bowler_stats.bowling_sixes += 1
+                player.save()
+                bowler_stats.bowling_runs_conceded += runs
+                if ball_in_over == 6:
+                    bowled_over = int(bowler_stats.bowling_overs)
+                    bowler_stats.bowling_overs = f"{bowled_over + 1}.0"
+                else:
+                    bowled_over = int(bowler_stats.bowling_overs)
+                    bowler_stats.bowling_overs = f"{bowled_over}.{ball_in_over}"
+                bowler_stats.save()
 
-            bowler_stats.bowling_runs_conceded += 1
-            bowler_stats.save()
+            if extras or extras_type:
+                if extras_type == 'wd':
+                    bowler_stats.bowling_wides += 1
+                    bowler_stats.bowling_runs_conceded += extras
+                elif extras_type == 'nb':
+                    bowler_stats.bowling_noballs += 1
+                    bowler_stats.bowling_runs_conceded += 1 + runs
+                    player.batting_runs_scored += runs
+                elif extras_type == 'lb':
+                    if ball_in_over == 6:
+                        bowled_over = int(bowler_stats.bowling_overs)
+                        bowler_stats.bowling_overs = f"{bowled_over + 1}.0"
+                    else:
+                        bowled_over = int(bowler_stats.bowling_overs)
+                        bowler_stats.bowling_overs = f"{bowled_over}.{ball_in_over}"
+                bowler_stats.save()
+                player.save()
+            
+            if player.batting_balls_faced > 0:
+                player.batting_strike_rate = (player.batting_runs_scored / player.batting_balls_faced) * 100
+                player.save()
 
+            # Ensure bowler_stats.bowling_overs is a float before comparison
+            if float(bowler_stats.bowling_overs) > 0:
+                bowler_stats.bowling_economy = bowler_stats.bowling_runs_conceded / float(bowler_stats.bowling_overs)
+                bowler_stats.save()
 
         if how_out:
-            player.how_out = how_out
-            player.people_involved = people_involved
+            out_player.how_out = how_out
+            out_player.people_involved = people_involved
             if how_out != 'run_out':
                 bowler_stats.bowling_wickets += 1
-            out_player = MatchTeamPlayer.objects.get(player_id=who_out, match_id=match_id)
-            
-            print(f'Before change - Striker: {out_player.is_striker}, Non-Striker: {out_player.is_non_striker}')
-
-            if out_player.is_striker:
-                out_player.is_striker = False
-                print('view', who_out, 'set is_striker to False')
-            elif out_player.is_non_striker:
-                out_player.is_non_striker = False
-                print('view', who_out, 'set is_non_striker to False')
-
-            print(f'After change - Striker: {out_player.is_striker}, Non-Striker: {out_player.is_non_striker}')
-
-            # Direct SQL query to update the database
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    UPDATE match_matchteamplayer
-                    SET is_striker = %s, is_non_striker = %s
-                    WHERE player_id_id = %s AND match_id_id = %s
-                """, [out_player.is_striker, out_player.is_non_striker, who_out, match_id])
-
-            # Refresh object from the database
+            if how_out == 'run_out':
+                batter = MatchTeamPlayer.objects.get(player_id=onstrike, match_id=match_id)
+                if runs > 0:
+                    batter.batting_runs_scored += runs
+                    bowler_stats.bowling_runs_conceded += runs
+                batter.batting_balls_faced += 1
+                batter.save()
+            out_player.is_non_striker = False
+            out_player.is_striker = False
+            out_player.save()
             out_player.refresh_from_db()
-            print(f'After save - Striker: {out_player.is_striker}, Non-Striker: {out_player.is_non_striker}')
-            
+            if ball_in_over == 6:
+                bowler_stats.bowling_overs = f"{over + 1}.0"
+            else:
+                bowler_stats.bowling_overs = f"{over}.{ball_in_over}"
             bowler_stats.save()
-            player.save()
-
+            bowler_stats.save()
 
         return Response({'message': 'Score updated successfully'}, status=status.HTTP_200_OK)
     except Exception as e:
@@ -499,8 +778,6 @@ def update_bowler(request):
         return JsonResponse({'error': str(e)}, status=400)
     
 
-
-
 @api_view(['POST'])
 def new_batter_selection(request):
     try:
@@ -533,3 +810,263 @@ def new_batter_selection(request):
         return Response({'error': 'Player not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+################################################ User ScoreCard Starts ##############################################
+
+
+@api_view(['GET'])
+def scorecard_match_details(request, match_id):
+    try:
+        match = Match.objects.get(id=match_id)
+        home_team = match.home_team
+        away_team = match.away_team
+
+        # Get the last ball of each innings
+        last_ball_innings1 = BallByBall.objects.filter(match_id=match, innings=1).order_by('-over', '-ball_in_over', '-id').first()
+        # First, try to get the last ball of innings 2
+        last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=2).order_by('-over', '-ball_in_over', '-id').first()
+
+        # If innings 2 does not exist, try to get the last ball of innings 3
+        if not last_ball_innings2:
+            last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=3).order_by('-over', '-ball_in_over', '-id').first()
+            
+
+
+        match_data = {
+            'match_details': MatchDetailSerializer(match).data,
+            'home_team': TeamSerializer(home_team).data,
+            'away_team': TeamSerializer(away_team).data,
+            'last_ball_innings1': {
+                'total_runs': last_ball_innings1.total_runs,
+                'total_wickets': last_ball_innings1.total_wickets,
+                'overs': last_ball_innings1.over,
+                'balls': last_ball_innings1.ball_in_over,
+            } if last_ball_innings1 else None,
+            'last_ball_innings2': {
+                'total_runs': last_ball_innings2.total_runs,
+                'total_wickets': last_ball_innings2.total_wickets,
+                'overs': last_ball_innings2.over,
+                'balls': last_ball_innings2.ball_in_over,
+            } if last_ball_innings2 else None,
+        }
+
+        return Response(match_data, status=200)
+    except Match.DoesNotExist:
+        return Response({'error': 'Match not found'}, status=404)
+    
+
+###################################################### summary ##############################################################
+
+
+class SummaryViewSet(viewsets.ViewSet):
+    
+    @action(detail=True, methods=['get'], url_path='summary-card')
+    def get_match_summary(self, request, pk=None):
+        match_id = pk
+        
+        # Top three batting performances
+        top_batters = MatchTeamPlayer.objects.filter(match_id=match_id, is_batted=True).order_by('-batting_runs_scored')[:3]
+        
+        # Calculate and save batting strike rate for each batter
+        for batter in top_batters:
+            if batter.batting_balls_faced != 0:
+                batter.batting_strike_rate = round((batter.batting_runs_scored / batter.batting_balls_faced) * 100, 2)
+            else:
+                batter.batting_strike_rate = 0
+            batter.save()  # Save the updated batting strike rate to the database
+
+        # Top three bowling performances
+        top_bowlers = MatchTeamPlayer.objects.filter(match_id=match_id, is_bowled=True).annotate(
+            economy=ExpressionWrapper(
+                F('bowling_runs_conceded') / F('bowling_overs'),
+                output_field=FloatField()
+            )
+        ).order_by('-bowling_wickets', 'economy')[:3]
+
+        # Calculate and save bowling economy for each bowler
+        for bowler in top_bowlers:
+            bowler.bowling_economy = bowler.economy
+            bowler.save()  # Save the updated bowling economy to the database
+
+        batter_serializer = BatterSerializer(top_batters, many=True)
+        bowler_serializer = BowlerSerializer(top_bowlers, many=True)
+        
+        return Response({
+            'top_batters': batter_serializer.data,
+            'top_bowlers': bowler_serializer.data
+        })
+
+########################################### extended scorecard ###############################################
+
+
+@api_view(['GET'])
+def extended_match_scorecard(request, match_id):
+    try:
+        match = get_object_or_404(Match, id=match_id)
+        home_team = match.home_team
+        away_team = match.away_team
+
+        last_ball_innings1 = BallByBall.objects.filter(match_id=match, innings=1).order_by('-over', '-ball_in_over').first()
+        last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=2).order_by('-over', '-ball_in_over').first()
+
+        # If innings 2 does not exist, try to get the last ball of innings 3
+        if not last_ball_innings2:
+            last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=3).order_by('-over', '-ball_in_over').first()
+
+        # Get the last ball of each innings where how_out is null
+        bal_by_ball_innings1wickets = BallByBall.objects.filter(match_id=match, innings=1, how_out__isnull=True)
+        bal_by_ball_innings2wickets = BallByBall.objects.filter(match_id=match, innings=2, how_out__isnull=True)
+
+        # Determine which team batted first
+        if match.batting_first == 'home':
+            innings_1_batting = MatchTeamPlayer.objects.filter(match_id=match, is_batted=True, team_id=home_team)
+            innings_1_Not_Batted = MatchTeamPlayer.objects.filter(match_id=match, is_batted=False, team_id=home_team)
+            innings_1_bowling = MatchTeamPlayer.objects.filter(match_id=match, is_bowled=True, team_id=away_team)
+            innings_2_batting = MatchTeamPlayer.objects.filter(match_id=match, is_batted=True, team_id=away_team)
+            innings_2_Not_Batted = MatchTeamPlayer.objects.filter(match_id=match, is_batted=False, team_id=away_team)
+            innings_2_bowling = MatchTeamPlayer.objects.filter(match_id=match, is_bowled=True, team_id=home_team)
+        else:
+            innings_1_batting = MatchTeamPlayer.objects.filter(match_id=match, is_batted=True, team_id=away_team)
+            innings_1_Not_Batted = MatchTeamPlayer.objects.filter(match_id=match, is_batted=False, team_id=away_team)
+            innings_1_bowling = MatchTeamPlayer.objects.filter(match_id=match, is_bowled=True, team_id=home_team)
+            innings_2_batting = MatchTeamPlayer.objects.filter(match_id=match, is_batted=True, team_id=home_team)
+            innings_2_Not_Batted = MatchTeamPlayer.objects.filter(match_id=match, is_batted=False, team_id=home_team)
+            innings_2_bowling = MatchTeamPlayer.objects.filter(match_id=match, is_bowled=True, team_id=away_team)
+
+        match_data = MatchSerializer(match).data
+        home_team_data = TeamSerializer(home_team).data
+        away_team_data = TeamSerializer(away_team).data
+        innings_1_batting_data = MatchTeamPlayerSerializerr(innings_1_batting, many=True).data
+        innings_1_Not_Batted_data = MatchTeamPlayerSerializerr(innings_1_Not_Batted, many=True).data
+        innings_1_bowling_data = MatchTeamPlayerSerializerr(innings_1_bowling, many=True).data
+        innings_2_batting_data = MatchTeamPlayerSerializerr(innings_2_batting, many=True).data
+        innings_2_Not_Batted_data = MatchTeamPlayerSerializerr(innings_2_Not_Batted, many=True).data
+        innings_2_bowling_data = MatchTeamPlayerSerializerr(innings_2_bowling, many=True).data
+        bal_by_ball_innings1wickets_data = BallByBallSerializer(bal_by_ball_innings1wickets, many=True).data
+        bal_by_ball_innings2wickets_data = BallByBallSerializer(bal_by_ball_innings2wickets, many=True).data
+        last_ball_innings1_data = BallByBallSerializer(last_ball_innings1).data
+        last_ball_innings2_data = BallByBallSerializer(last_ball_innings2).data
+        context = {
+            'match_details': match_data,
+            'home_team': home_team_data,
+            'away_team': away_team_data,
+            'innings_1_batting': innings_1_batting_data,
+            'innings_1_bowling': innings_1_bowling_data,
+            'innings_2_batting': innings_2_batting_data,
+            'innings_2_bowling': innings_2_bowling_data,
+            'bal_by_ball_innings1wickets': bal_by_ball_innings1wickets_data,
+            'bal_by_ball_innings2wickets': bal_by_ball_innings2wickets_data,
+            'last_ball_innings1': last_ball_innings1_data,
+            'last_ball_innings2': last_ball_innings2_data,
+            'innings_1_Not_Batted': innings_1_Not_Batted_data,
+            'innings_2_Not_Batted': innings_2_Not_Batted_data,
+        }
+
+        return Response(context)
+    except Match.DoesNotExist:
+        return Response({'error': 'Match not found'}, status=404)
+
+
+
+########################################################### commentary ##############################################################
+
+
+@api_view(['GET'])
+def extended_commentary(request, match_id):
+    try:
+        match = get_object_or_404(Match, id=match_id)
+        
+        # Determine the batting first and second teams
+        if match.batting_first == 'home':
+            batting_first = match.home_team.team_name
+            batting_second = match.away_team.team_name
+        else:
+            batting_first = match.away_team.team_name
+            batting_second = match.home_team.team_name
+
+        # Fetch ball-by-ball data for commentary
+        commentary_innings1 = BallByBall.objects.filter(match_id=match, innings=1)
+        commentary_innings2 = BallByBall.objects.filter(match_id=match, innings=2)
+        if not commentary_innings2:
+            commentary_innings2 = BallByBall.objects.filter(match_id=match, innings=3)
+        commentary_data_1 = BallByBallCommentarySerializer(commentary_innings1, many=True).data
+        commentary_data_2 = BallByBallCommentarySerializer(commentary_innings2, many=True).data
+        
+
+        context = {
+            'batting_first': batting_first,
+            'batting_second': batting_second,
+            'com_innings_1': commentary_data_1,
+            'com_innings_2': commentary_data_2,
+        }
+
+        return Response(context)
+    except Match.DoesNotExist:
+        return Response({'error': 'Match not found'}, status=404)
+
+
+# ######################################################## MOM , BB, BB #############################################################
+
+
+@api_view(['GET'])
+def match_awards(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    awards = match.calculate_awards()
+    return JsonResponse(awards)
+
+
+@api_view(['GET'])
+def player_points(request, match_id):
+    players = MatchTeamPlayer.objects.filter(match_id=match_id)
+    
+    player_points_list = []
+    
+    for player in players:
+        batting_mvp_points = (player.batting_runs_scored / 10) + (player.batting_strike_rate / 100)
+        if player.bowling_overs > 0:
+            bowling_mvp_points = (player.bowling_wickets) + (7 / player.bowling_economy)
+        else:
+            bowling_mvp_points = 0
+        
+        total_mvp_points = batting_mvp_points + bowling_mvp_points
+        
+        player_info = {
+            'player_id': player.player_id.id,
+            'name': player.player_id.first_name,
+            'team_name': player.team_id.team_name,
+            'batting_mvp_points': batting_mvp_points,
+            'bowling_mvp_points': bowling_mvp_points,
+            'total_mvp_points': total_mvp_points
+        }
+        
+        player_points_list.append(player_info)
+    
+    sorted_player_points = sorted(player_points_list, key=lambda x: x['total_mvp_points'], reverse=True)
+    
+    return JsonResponse({'players': sorted_player_points})
+
+
+@api_view(['GET'])
+def match_teams_players(request, match_id):
+    try:
+        match = Match.objects.get(id=match_id)
+        home_team_players = MatchTeamPlayer.objects.filter(match_id=match_id, team_id=match.home_team_id)
+        away_team_players = MatchTeamPlayer.objects.filter(match_id=match_id, team_id=match.away_team_id)
+
+        home_team_players_data = [{
+            'player_name': player.player_id.first_name,  # Assuming User model has a username field
+            'team_name': player.team_id.team_name           # Assuming Team model has a name field
+        } for player in home_team_players]
+
+        away_team_players_data = [{
+            'player_name': player.player_id.first_name,
+            'team_name': player.team_id.team_name
+        } for player in away_team_players]
+
+        return Response({
+            'home_team_players': home_team_players_data,
+            'away_team_players': away_team_players_data
+        })
+    except Match.DoesNotExist:
+        return Response(status=404)

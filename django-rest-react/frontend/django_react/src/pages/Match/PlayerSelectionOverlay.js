@@ -12,7 +12,9 @@ function PlayerSelectionOverlay({
   handleStartScoring,
   missingInfo,
   updatePlayerInfo,
-  handleBatterChange
+  handleBatterChange,
+  setNewBowler,
+  handleBowlerChange
 }) {
   const BATTING_STYLE_CHOICES = [
     ['Right-handed', 'Right-handed'],
@@ -43,7 +45,7 @@ function PlayerSelectionOverlay({
     setNonStriker(selectedPlayer);
   };
   
-  const handleBowlerChange = (e) => {
+  const handleBowlerChanges = (e) => {
     const selectedPlayer = JSON.parse(e.target.value);
     setSelectedBowler(selectedPlayer);
   };
@@ -58,7 +60,7 @@ function PlayerSelectionOverlay({
             <label className="block mb-2">Striker Batsman</label>
             <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(striker)} onChange={e => handleBatterChange(JSON.parse(e.target.value), false)}>
               <option value="">Select Striker Batsman</option>
-              {battingTeamPlayers.map(player => (
+              {battingTeamPlayers.filter(player => !player.is_batted).map(player => (
                 <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
               ))}
             </select>
@@ -70,21 +72,28 @@ function PlayerSelectionOverlay({
             <label className="block mb-2">Non-Striker Batsman</label>
             <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(nonStriker)} onChange={e => handleBatterChange(JSON.parse(e.target.value), true)}>
               <option value="">Select Non-Striker Batsman</option>
-              {battingTeamPlayers.map(player => (
+              {battingTeamPlayers.filter(player => !player.is_batted && player.id !== (striker.id || "")).map(player => (
                 <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
               ))}
             </select>
           </>
         )}
-
+        {console.log('this is',bowlingTeamPlayers)}
         {selectedBowler.id === '' && selectedBowler.name === '' && (
           <>
             <label className="block mb-2">Bowler</label>
-            <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(selectedBowler)} onChange={handleBowlerChange}>
+            <select className="mb-4 p-2 rounded bg-gray-700" value={JSON.stringify(selectedBowler)} onChange={e => handleBowlerChange(JSON.parse(e.target.value))}>
               <option value="">Select Bowler</option>
-              {bowlingTeamPlayers.map(player => (
-                <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
-              ))}
+              {selectedBowler != null ? 
+                bowlingTeamPlayers.map(player => (
+                  <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
+                ))
+                : bowlingTeamPlayers.filter(player => player.id === (selectedBowler.id)).map(player => (
+                  <option key={player.id} value={JSON.stringify({ id: player.id, name: player.name })}>{player.name}</option>
+                ))
+              }
+
+              
             </select>
           </>
         )}

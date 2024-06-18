@@ -104,7 +104,7 @@ function UserHome() {
                 <p>No live matches available.</p>
               ) : (
                 liveMatches.map(match => (
-                  <div key={match.id} className='p-4 border cursor-pointer'>
+                  <div key={match.id} className='p-4 border cursor-pointer' onClick={() => navigate('match-details')}>
                     <div className='h-44 w-full bg-white rounded-lg'>
                       <div className='w-full border-b border-slate-300 h-1/5 flex items-center justify-center'>
                         <p className='text-center sm:text-sm'>{match.home_team.team_name} vs {match.away_team.team_name}</p>
@@ -136,10 +136,15 @@ function UserHome() {
                         </div>
                       </div>
                       <div className='w-full h-1/5 flex px-3 border-t border-slate-300'>
-                        <div className='flex items-center'>
-                          <p className='text-sm flex text-center justify-center space-x-1'><span className='font-extrabold'></span><span></span><span className='font-extrabold'></span></p>
+                          <div className='flex items-center'>
+                            <p className='text-sm flex text-center justify-center space-x-1'>
+                              <span className='font-extrabold'>{match.toss_winner}</span>
+                              <span>won the toss and elected to</span>
+                              <span className='font-extrabold'>{match.elected_to}</span>
+                              <span>first</span>
+                            </p>
+                          </div>
                         </div>
-                      </div>
                     </div>
                   </div>
                 ))
@@ -154,7 +159,7 @@ function UserHome() {
                   <p>No scheduled matches available.</p>
                 ) : (
                   scheduledMatches.map(match => (
-                    <div key={match.id} className='p-2 border' onClick={() => navigate('match-details')}>
+                    <div key={match.id} className='p-4 border'>
                       <div className='h-44 w-full bg-white rounded-lg'>
                         <div className='w-full border-b border-slate-300 h-1/5 flex items-center justify-center'>
                           <p className='text-center'>{match.home_team.team_name} vs {match.away_team.team_name}</p>

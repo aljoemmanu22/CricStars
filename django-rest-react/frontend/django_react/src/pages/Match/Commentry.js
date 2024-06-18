@@ -1,8 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams, useNavigate } from "react-router-dom";
 
-const Commentry = () => {
-  const [selectedTeam, setSelectedTeam] = useState('Explorer Cricket Club');
+const Commentry = ({ matchId }) => {
+  const [selectedTeam, setSelectedTeam] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [commentary1, setCommentary1] = useState([])
+  const [commentary2, setCommentary2] = useState([])
+  const [bats_first, setBattingFirst] = useState('')
+  const [bats_second, setBattingSecond] = useState('')
+
+  const navigate = useNavigate();
+  const token = localStorage.getItem('access');
+  const baseURL = 'http://127.0.0.1:8000';
+
+  useEffect(() => {
+    axios.get(`${baseURL}/api/extended-commentary/${matchId}/`, {
+      headers: {
+        authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if(response.data) {
+          console.log(response.data)
+          console.log(response.data.com_innings_1)
+          setCommentary1(response.data.com_innings_1);
+          setCommentary2(response.data.com_innings_2);
+          setBattingFirst(response.data.batting_first)
+          setBattingSecond(response.data.batting_second)
+          setSelectedTeam(response.data.batting_first)
+        }
+      })
+      .catch((error) => {
+        console.error('There was an error fetching the commentary!', error);
+      });
+      }, [matchId, token]);
+
 
   const handleArrowClick = () => {
     setDropdownVisible(!dropdownVisible);
@@ -12,6 +47,20 @@ const Commentry = () => {
     setSelectedTeam(team);
     setDropdownVisible(false);
   };
+
+  const getRunsBackgroundClass = (runs) => {
+    if (runs === 4) return 'bg-orange-500';
+    if (runs === 6) return 'bg-green-500';
+    return 'bg-slate-200';
+  };
+
+  const handleExtras = (extras_type) => {
+    if (extras_type === 'wd') return 'Wd';
+    if (extras_type === 'bye')  return 'BY';
+    if (extras_type === 'lb') return 'LB'
+    if (extras_type === 'nb') return 'NB'
+  }
+
   return (
     <div>
       {/* Top Header */}
@@ -29,196 +78,152 @@ const Commentry = () => {
         {/* Dropdown Menu */}
         {dropdownVisible && (
           <div className='absolute top-14 right-1/2 bg-white border shadow-md z-10'>
-            <p className='p-2 cursor-pointer hover:bg-gray-100' onClick={() => handleTeamSelection('Explorer Cricket Club')}>Explorer Cricket Club</p>
-            <p className='p-2 cursor-pointer hover:bg-gray-100' onClick={() => handleTeamSelection('BCA')}>BCA</p>
+            <p className='p-2 cursor-pointer hover:bg-gray-100' onClick={() => handleTeamSelection(bats_first)}>{bats_first}</p>
+            <p className='p-2 cursor-pointer hover:bg-gray-100' onClick={() => handleTeamSelection(bats_second)}>{bats_second}</p>
           </div>
         )}
       </div>
       
       {/* commentry */}
       <div className=''>
-        {selectedTeam === 'Explorer Cricket Club' && (
+        {selectedTeam === bats_first && (
           <div>
             {/* Ball in Overs */}
             <div>
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-3 py-4 w-12'>14.5</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className='bg-red-900 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-3 py-4 w-12'>14.5</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className=' bg-pink-300 text-white p-2 rounded-full w-10 flex items-center justify-center'>WD</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-4 py-4 w-12'>14.4</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className=' bg-amber-400 text-white p-2 rounded-full w-10 flex items-center justify-center'>4</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className='border-b pl-3 flex items-center justify-start'>
-                  <div>
-                    <p className='pl-3 py-4 w-12'>14.3</p>
-                  </div>
-                  <div className='pl-4 w-14'>
-                    <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                  </div>
-                  <div className='pl-4'>
+              {commentary1.map((commend, index) => (
+                <div key={index}>
+                  {/*  For New Over */}
+                  {commend.ball_in_over == '1' && 
+                  
                     <div>
-                      <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
+                      <div className='border-b pl-3 flex items-center justify-start'>
+                        <div className='pl-3 w-14 py-3'>
+                          <img className='w-10 rounded-full' src="/images/userlogo.png"/>
+                          <p>NEXT</p>
+                        </div>
+                        <div>
+                          <div>
+                            <p className='pl-3 font-medium'>{commend.bowler.first_name}</p>
+                          </div>
+                          <div>
+                            <p className='pl-3 text-xs'>{commend.bowler.bowling_style}</p>
+                          </div>
+                          <div className='flex text-center text-sm'>
+                            <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > WICKETS:<span className='font-semibold border-r pr-1 border-black'>{commend.bowler.bowling_wickets}</span> ECO:<span className='font-semibold border-r pr-1 border-black'>{commend.bowler.bowling_economy}</span> BEST:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  }
+
+                  {(commend.ball_in_over == '1' && commend.over != 0) &&
                     <div>
-                      <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
+                    <div className='border-b pl-3 items-center bg-teal-300 py-2'>
+                      <div className='pl-4 flex justify-between py-1'>
+                        <div className=''>
+                          <p className='font-bold'>End of Over {commend.over}</p>
+                        </div>
+                        <div className='pr-4 font-bold text-2xl'>
+                          <p>{commend.total_runs}/{commend.total_wickets}</p>
+                        </div>
+                      </div>
+                      <div className=''>
+                        <p className='pl-4'>{`${commend.runs_inover} Runs ${commend.wickets_inover} Wicket`}</p>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className='border-b pl-3 flex items-center justify-start'>
-                  <div className='pl-3 w-14 py-3'>
-                    <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                    <p>NEXT</p>
-                  </div>
-                  <div>
-                    <div>
-                      <p className='pl-3 w-12 font-medium'>Anoop</p>
+                    <div className='border-b pl-3 flex items-center border-t bg-teal-200'>
+                      <div className='pl-4 w-1/2 border-r-2 '>
+                        <div className='flex justify-between'>
+                          <p className='font-bold py-2'>{commend.striker.first_name}</p>
+                          <p className='pr-3 py-2'>{commend.striker.batting_runs_scored}({commend.striker.batting_balls_faced})</p>
+                        </div>
+                        <div className='flex justify-between'>
+                          <p className='font-bold pb-2'>{commend.non_striker.first_name}</p>
+                        <p className='pr-3 pb-2'>{commend.non_striker.batting_runs_scored}({commend.non_striker.batting_balls_faced})</p>
+                        </div>
+                      </div>
+                      <div className='pl-4 w-1/2 border-r-2 '>
+                        <div className='flex justify-between'>
+                          <p className='font-bold py-2'>{commend.bowler.first_name}</p>
+                          <p className='pr-3 py-2'>{commend.bowler.bowling_overs}-{commend.bowler.bowling_maiden_overs}-{commend.bowler.bowling_runs_conceded}-{commend.bowler.bowling_wickets}</p>
+                        </div>
+                        <div className='flex justify-between'>
+                          <p className='font-bold pb-2'>&nbsp;</p>
+                          <p className='pr-3 pb-2'>&nbsp;</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className='pl-3 w-12 text-xs'>RHD</p>
                     </div>
-                    <div className='flex text-center text-sm'>
-                      <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > RUNS:<span className='font-semibold border-r pr-1 border-black'>4</span> AVG:<span className='font-semibold border-r pr-1 border-black'>4</span> SR:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
+                  
+                  }
+
+                  {/* For non-wicket commentary */}
+                  {(commend.runs !== 0 || commend.runs === 0) && commend.how_out === '' && commend.extras_type === '' && (
+                    <div className='border-b pl-3 flex items-center justify-start'>
+                      <div>
+                        <p className='pl-3 py-4 w-12'>{commend.over}.{commend.ball_in_over}</p>
+                      </div>
+                      <div className='pl-4 w-14'>
+                        <p className={`text-white p-2 rounded-full w-10 flex items-center justify-center ${getRunsBackgroundClass(commend.runs)}`}>{commend.runs}</p>
+                      </div>
+                      <div className='pl-4'>
+                        <div>
+                          <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.runs} run{commend.runs !== 1 && 's'}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              
+                  )}
 
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-3 py-4 w-12'>14.2</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className='bg-red-900 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
+                  {/* For no ball, wide and other extras commentary */}
+                  {commend.extras_type !== ''  && commend.how_out === '' && (
+                    <div className='border-b pl-3 flex items-center justify-start'>
+                      <div>
+                        <p className='pl-3 py-4 w-12'>{commend.over}.{commend.ball_in_over}</p>
+                      </div>
+                      <div className='pl-4 w-14'>
+                        <p className={`text-white p-2 rounded-full w-10 flex items-center justify-center bg-pink-400`}>{handleExtras(commend.extras_type)}</p>
+                      </div>
+                      <div className='pl-4'>
+                        <div>
+                          <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.extras_type} {commend.runs != 0 &&  commend.runs} {commend.runs != 0 && 'run'}{commend.runs > 1 && 's'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-4 py-4 w-12'>14.1</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  {/* For wicket commentary */}
+                  {(commend.how_out !== '' && commend.how_out != 'run-out') && (
+                    <div className='border-b pl-3 flex items-center justify-start'>
+                      <div>
+                        <p className='pl-3 py-4 w-12'>{commend.over}.{commend.ball_in_over}</p>
+                      </div>
+                      <div className='pl-4 w-14'>
+                        <p className='bg-red-500 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
+                      </div>
+                      <div className='pl-4'>
+                        {commend.how_out != 'run_out' && (
+                          <div>
+                            <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.how_out === 'catch_out' && 'OUT Caught out, Caught by'} {commend.how_out === 'stumped' && 'OUT stumped, he took advance but missed the ball, stumped by'} {commend.how_out === 'LBW' && 'OUT lbw, he miss the line'} {commend.how_out === 'bowled' && 'OUT bolwled, tight yorker'} {commend.people_involved}</p>
+                          </div>
+                        )}
+                        {commend.how_out === 'run_out' && (
+                          <div>
+                            <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.who_out === commend.onstrike &&  `${commend.striker.first_name} by ${commend.people_involved}`}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p>{commend.who_out === commend.onstrike ? commend.striker.first_name : commend.non_striker.first_name}
+                            {commend.who_out === commend.onstrike && (<>{commend.striker.batting_runs_scored}r {commend.striker.batting_balls_faced}b {commend.striker.bating_fours}x4s {commend.striker.batting_sixes}x6s SR: {commend.striker.batting_strike_rate}</>)}
+                            {commend.who_out === commend.offstrike && (<>{commend.non_striker.batting_runs_scored}r {commend.non_striker.batting_balls_faced}b {commend.non_striker.bating_fours}x4s {commend.non_striker.batting_sixes}x6s SR: {commend.non_striker.batting_strike_rate}</>)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
 
-            {/* Over Start */}
-            <div>
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div className='pl-3 w-14 py-3'>
-                  <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                  <p>NEXT</p>
                 </div>
-                <div>
-                  <div>
-                    <p className='pl-3 font-medium'>Krishnaraj P S</p>
-                  </div>
-                  <div>
-                    <p className='pl-3 text-xs'>Right-arm fast</p>
-                  </div>
-                  <div className='flex text-center text-sm'>
-                    <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > WICKETS:<span className='font-semibold border-r pr-1 border-black'>4</span> ECO:<span className='font-semibold border-r pr-1 border-black'>4</span> BEST:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='border-b pl-3 items-center bg-teal-300 py-2'>
-              <div className='pl-4 flex justify-between py-1'>
-                <div className=''>
-                  <p className='font-bold'>End of Over 13</p>
-                </div>
-                <div className='pr-4 font-bold text-2xl'>
-                  <p>80/8</p>
-                </div>
-              </div>
-              <div className=''>
-                <p className='pl-4'>7 Runs 1 Wicket</p>
-              </div>
-            </div>
-            <div className='border-b pl-3 flex items-center border-t bg-teal-200'>
-              <div className='pl-4 w-1/2 border-r-2 '>
-                <div className='flex justify-between'>
-                  <p className='font-bold py-2'>Mahesh</p>
-                  <p className='pr-3 py-2'>6(5)</p>
-                </div>
-                <div className='flex justify-between'>
-                  <p className='font-bold pb-2'>Dinil Raj</p>
-                  <p className='pr-3 pb-2'>6(5)</p>
-                </div>
-              </div>
-              <div className='pl-4 w-1/2 border-r-2 '>
-                <div className='flex justify-between'>
-                  <p className='font-bold py-2'>Mahesh</p>
-                  <p className='pr-3 py-2'>6(5)</p>
-                </div>
-                <div className='flex justify-between'>
-                  <p className='font-bold pb-2'>&nbsp;</p>
-                  <p className='pr-3 pb-2'>&nbsp;</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
@@ -226,190 +231,147 @@ const Commentry = () => {
 
 
 
-        {selectedTeam === 'BCA' && (
+        {selectedTeam === bats_second && (
           <div>
-            {/* Ball in Overs */}
-            <div>
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-3 py-4 w-12'>14.5</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className='bg-red-900 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
+          {/* Ball in Overs */}
+          <div>
+            {commentary2.map((commend, index) => (
+              <div key={index}>
 
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-3 py-4 w-12'>14.5</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className=' bg-pink-300 text-white p-2 rounded-full w-10 flex items-center justify-center'>WD</p>
-                </div>
-                <div className='pl-4'>
+                {/*  For New Over */}
+                {(commend.ball_in_over === '1' && commend.over === '0' || commend.ball_in_over === '1') && 
+                
                   <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
+                    <div className='border-b pl-3 flex items-center justify-start'>
+                      <div className='pl-3 w-14 py-3'>
+                        <img className='w-10 rounded-full' src="/images/userlogo.png"/>
+                        <p>NEXT</p>
+                      </div>
+                      <div>
+                        <div>
+                          <p className='pl-3 font-medium'>{commend.bowler.first_name}</p>
+                        </div>
+                        <div>
+                          <p className='pl-3 text-xs'>{commend.bowler.bowling_style}</p>
+                        </div>
+                        <div className='flex text-center text-sm'>
+                          <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > WICKETS:<span className='font-semibold border-r pr-1 border-black'>{commend.bowler.bowling_wickets}</span> ECO:<span className='font-semibold border-r pr-1 border-black'>{commend.bowler.bowling_economy}</span> BEST:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
+                }
 
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-4 py-4 w-12'>14.4</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className=' bg-amber-400 text-white p-2 rounded-full w-10 flex items-center justify-center'>4</p>
-                </div>
-                <div className='pl-4'>
+                {(commend.ball_in_over == '1' && commend.over != 0) &&
                   <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
+                  <div className='border-b pl-3 items-center bg-teal-300 py-2'>
+                    <div className='pl-4 flex justify-between py-1'>
+                      <div className=''>
+                        <p className='font-bold'>End of Over {commend.over}</p>
+                      </div>
+                      <div className='pr-4 font-bold text-2xl'>
+                        <p>{commend.total_runs}/{commend.total_wickets}</p>
+                      </div>
+                    </div>
+                    <div className=''>
+                      <p className='pl-4'>{`${commend.runs_inover} Runs ${commend.wickets_inover} Wicket`}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
+                  <div className='border-b pl-3 flex items-center border-t bg-teal-200'>
+                    <div className='pl-4 w-1/2 border-r-2 '>
+                      <div className='flex justify-between'>
+                        <p className='font-bold py-2'>{commend.striker.first_name}</p>
+                        <p className='pr-3 py-2'>{commend.striker.batting_runs_scored}({commend.striker.batting_balls_faced})</p>
+                      </div>
+                      <div className='flex justify-between'>
+                        <p className='font-bold pb-2'>{commend.non_striker.first_name}</p>
+                      <p className='pr-3 pb-2'>{commend.non_striker.batting_runs_scored}({commend.non_striker.batting_balls_faced})</p>
+                      </div>
+                    </div>
+                    <div className='pl-4 w-1/2 border-r-2 '>
+                      <div className='flex justify-between'>
+                        <p className='font-bold py-2'>{commend.bowler.first_name}</p>
+                        <p className='pr-3 py-2'>{commend.bowler.bowling_overs}-{commend.bowler.bowling_maiden_overs}-{commend.bowler.bowling_runs_conceded}-{commend.bowler.bowling_wickets}</p>
+                      </div>
+                      <div className='flex justify-between'>
+                        <p className='font-bold pb-2'>&nbsp;</p>
+                        <p className='pr-3 pb-2'>&nbsp;</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                  </div>
+                
+                }
 
-              <div>
-                <div className='border-b pl-3 flex items-center justify-start'>
-                  <div>
-                    <p className='pl-3 py-4 w-12'>14.3</p>
-                  </div>
-                  <div className='pl-4 w-14'>
-                    <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                  </div>
-                  <div className='pl-4'>
+                {/* For non-wicket commentary */}
+                {(commend.runs !== 0 || commend.runs === 0) && commend.how_out === '' && commend.extras_type === '' && (
+                  <div className='border-b pl-3 flex items-center justify-start'>
                     <div>
-                      <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
+                      <p className='pl-3 py-4 w-12'>{commend.over}.{commend.ball_in_over}</p>
                     </div>
+                    <div className='pl-4 w-14'>
+                      <p className={`text-white p-2 rounded-full w-10 flex items-center justify-center ${getRunsBackgroundClass(commend.runs)}`}>{commend.runs}</p>
+                    </div>
+                    <div className='pl-4'>
+                      <div>
+                        <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.runs} run{commend.runs !== 1 && 's'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* For no ball, wide and other extras commentary */}
+                {commend.extras_type !== ''  && commend.how_out === '' && (
+                  <div className='border-b pl-3 flex items-center justify-start'>
                     <div>
-                      <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
+                      <p className='pl-3 py-4 w-12'>{commend.over}.{commend.ball_in_over}</p>
+                    </div>
+                    <div className='pl-4 w-14'>
+                      <p className={`text-white p-2 rounded-full w-10 flex items-center justify-center bg-pink-400`}>{handleExtras(commend.extras_type)}</p>
+                    </div>
+                    <div className='pl-4'>
+                      <div>
+                        <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.extras_type} {commend.runs != 0 &&  commend.runs} {commend.runs != 0 && 'run'}{commend.runs > 1 && 's'}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className='border-b pl-3 flex items-center justify-start'>
-                  <div className='pl-3 w-14 py-3'>
-                    <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                    <p>NEXT</p>
-                  </div>
-                  <div>
+                )}
+
+                {/* For wicket commentary */}
+                {(commend.how_out !== '' && commend.how_out != 'run-out') && (
+                  <div className='border-b pl-3 flex items-center justify-start'>
                     <div>
-                      <p className='pl-3 w-12 font-medium'>Anoop</p>
+                      <p className='pl-3 py-4 w-12'>{commend.over}.{commend.ball_in_over}</p>
                     </div>
-                    <div>
-                      <p className='pl-3 w-12 text-xs'>RHD</p>
+                    <div className='pl-4 w-14'>
+                      <p className='bg-red-500 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
                     </div>
-                    <div className='flex text-center text-sm'>
-                      <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > RUNS:<span className='font-semibold border-r pr-1 border-black'>4</span> AVG:<span className='font-semibold border-r pr-1 border-black'>4</span> SR:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
+                    <div className='pl-4'>
+                      {commend.how_out != 'run_out' && (
+                        <div>
+                          <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.how_out === 'catch_out' && 'OUT Caught out, Caught by'} {commend.how_out === 'stumped' && 'OUT stumped, he took advance but missed the ball, stumped by'} {commend.how_out === 'LBW' && 'OUT lbw, he miss the line'} {commend.how_out === 'bowled' && 'OUT bolwled, tight yorker'} {commend.people_involved}</p>
+                        </div>
+                      )}
+                      {commend.how_out === 'run_out' && (
+                        <div>
+                          <p className='font-bold'>{commend.bowler.first_name} to {commend.striker.first_name}, {commend.who_out === commend.onstrike &&  `${commend.striker.first_name} by ${commend.people_involved}`}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p>{commend.who_out === commend.onstrike ? commend.striker.first_name : commend.non_striker.first_name}
+                          {commend.who_out === commend.onstrike && (<>{commend.striker.batting_runs_scored}r {commend.striker.batting_balls_faced}b {commend.striker.bating_fours}x4s {commend.striker.batting_sixes}x6s SR: {commend.striker.batting_strike_rate}</>)}
+                          {commend.who_out === commend.offstrike && (<>{commend.non_striker.batting_runs_scored}r {commend.non_striker.batting_balls_faced}b {commend.non_striker.bating_fours}x4s {commend.non_striker.batting_sixes}x6s SR: {commend.non_striker.batting_strike_rate}</>)}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              
+                )}
+                
 
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-3 py-4 w-12'>14.2</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className='bg-red-900 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
               </div>
-
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div>
-                  <p className='pl-4 py-4 w-12'>14.1</p>
-                </div>
-                <div className='pl-4 w-14'>
-                  <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                </div>
-                <div className='pl-4'>
-                  <div>
-                    <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
-                  </div>
-                  <div>
-                    <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Over Start */}
-            <div>
-              <div className='border-b pl-3 flex items-center justify-start'>
-                <div className='pl-3 w-14 py-3'>
-                  <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                  <p>NEXT</p>
-                </div>
-                <div>
-                  <div>
-                    <p className='pl-3 font-medium'>Krishnaraj P S</p>
-                  </div>
-                  <div>
-                    <p className='pl-3 text-xs'>Right-arm fast</p>
-                  </div>
-                  <div className='flex text-center text-sm'>
-                    <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > WICKETS:<span className='font-semibold border-r pr-1 border-black'>4</span> ECO:<span className='font-semibold border-r pr-1 border-black'>4</span> BEST:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='border-b pl-3 items-center bg-teal-300 py-2'>
-              <div className='pl-4 flex justify-between py-1'>
-                <div className=''>
-                  <p className='font-bold'>End of Over 13</p>
-                </div>
-                <div className='pr-4 font-bold text-2xl'>
-                  <p>80/8</p>
-                </div>
-              </div>
-              <div className=''>
-                <p className='pl-4'>7 Runs 1 Wicket</p>
-              </div>
-            </div>
-            <div className='border-b pl-3 flex items-center border-t bg-teal-200'>
-              <div className='pl-4 w-1/2 border-r-2 '>
-                <div className='flex justify-between'>
-                  <p className='font-bold py-2'>Mahesh</p>
-                  <p className='pr-3 py-2'>6(5)</p>
-                </div>
-                <div className='flex justify-between'>
-                  <p className='font-bold pb-2'>Dinil Raj</p>
-                  <p className='pr-3 pb-2'>6(5)</p>
-                </div>
-              </div>
-              <div className='pl-4 w-1/2 border-r-2 '>
-                <div className='flex justify-between'>
-                  <p className='font-bold py-2'>Mahesh</p>
-                  <p className='pr-3 py-2'>6(5)</p>
-                </div>
-                <div className='flex justify-between'>
-                  <p className='font-bold pb-2'>&nbsp;</p>
-                  <p className='pr-3 pb-2'>&nbsp;</p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
+        </div>
         )}
 
 

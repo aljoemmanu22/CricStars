@@ -29,6 +29,13 @@ class BallByBall(models.Model):
     extras = models.IntegerField(default=0, blank=True, null=True)
     extras_type = models.CharField(max_length=20, blank=True, null=True)
     innings = models.IntegerField(default=1)
+    wides = models.IntegerField(default=0, blank=True, null=True)
+    noBalls = models.IntegerField(default=0, blank=True, null=True)
+    legbyes = models.IntegerField(default=0, blank=True, null=True)
+    byes = models.IntegerField(default=0, blank=True, null=True)
+    total_extras = models.IntegerField(default=0, blank=True, null=True) 
+    runs_inover = models.IntegerField(default=0, blank=True, null=True)
+    wickets_inover = models.IntegerField(default=0, blank=True, null=True)
 
     def __str__(self):
         """

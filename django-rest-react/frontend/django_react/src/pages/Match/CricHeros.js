@@ -1,32 +1,59 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-function CricHeros() {
+
+function CricHeros({ matchId }) {
+
+  const [awards, setAwards] = useState(null);
+
+  const baseURL = 'http://127.0.0.1:8000';
+  const token = localStorage.getItem('access');
+
+  useEffect(() => {
+    axios.get(baseURL + `/api/matches/${matchId}/awards/`, {
+        headers: {
+            'authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => setAwards(response.data))
+    .catch(error => console.error('Error fetching awards:', error));
+  }, [matchId]);
+
+  if (!awards) {
+    return <div>Loading...</div>;
+  }
+
+  const { man_of_the_match, best_batter, best_bowler } = awards;
+
   return (
     <div className='bg-black-rgba'>
+      {console.log(awards)}
       <div className='flex bg-red-700 rounded-lg'>
         <div className='w-4/6'>
           <div className='pl-4'>
             <p className='py-3 text-white text-2xl border-b font-semibold'>PLAYER OF THE MATCH</p>
           </div>
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Krishnaraj P S</p>
+            <p className='pt-3 text-white text-lg font-semibold'>{man_of_the_match ? man_of_the_match.name : 'N/A'}</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>Explorer Cricket Club</p>
+            <p className='py-1 text-white text-sm'>{man_of_the_match ? man_of_the_match.team_name : 'N/A'}</p>
           </div>
 
           <div className='pl-4'>
             <p className='pt-3 text-white text-lg font-semibold'>Batting</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>58 R37 B7 (4S)3 (6S)156.76 (SR)</p>
+            <p className='py-1 text-white text-sm'>{man_of_the_match && `${man_of_the_match.batting_runs_scored}R ${man_of_the_match.batting_balls_faced}B  ${man_of_the_match.batting_sixes}(6S) ${man_of_the_match.batting_fours}(4S) ${man_of_the_match.batting_strikeRate}(SR)`}</p>
           </div>
 
           <div className='pl-4'>
             <p className='pt-3 text-white text-lg font-semibold'>Bowling</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 pb-3 text-white text-sm'>0.5 Ov.0 M6 R2 W7.20 ECO.</p>
+            <p className='py-1 pb-3 text-white text-sm'>{man_of_the_match && `${man_of_the_match.bowling_overs}Ov ${man_of_the_match.bowling_maiden_overs}M ${man_of_the_match.bowling_runs_conceded}R ${man_of_the_match.bowling_wickets}W ${man_of_the_match.bowling_economy}EC`}</p>
           </div>
         </div>
         <div className='w-2/6'>
@@ -40,17 +67,17 @@ function CricHeros() {
             <p className='py-3 text-white text-2xl border-b font-semibold'>BEST BATTER</p>
           </div>
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Nandakrishna K S</p>
+            <p className='pt-3 text-white text-lg font-semibold'>{best_batter ? best_batter.name : 'N/A'}</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>Explorer Cricket Club</p>
+            <p className='py-1 text-white text-sm'>{best_batter ? best_batter.team_name : 'N/A'}</p>
           </div>
 
           <div className='pl-4'>
             <p className='pt-3 text-white text-lg font-semibold'>Batting</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>84 R42 B7 (4S)7 (6S)200.00 (SR)</p>
+            <p className='py-1 text-white text-sm'>{best_batter && `${best_batter.batting_runs_scored}R ${best_batter.batting_balls_faced}B  ${best_batter.batting_sixes}(6S) ${best_batter.batting_fours}(4S) ${best_batter.batting_strikeRate}(SR)`}</p>
           </div>
         </div>
         <div className='w-2/6'>
@@ -64,17 +91,17 @@ function CricHeros() {
             <p className='py-3 text-white text-2xl border-b font-semibold'>BEST BOWLER</p>
           </div>
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Akshay Nair</p>
+            <p className='pt-3 text-white text-lg font-semibold'>{best_bowler ? best_bowler.name : 'N/A'}</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>Intralife Cricket Academy</p>
+            <p className='py-1 text-white text-sm'>{best_bowler ? best_bowler.team_name : 'N/A'}</p>
           </div>
 
           <div className='pl-4'>
             <p className='pt-3 text-white text-lg font-semibold'>Bowling</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 pb-3 text-white text-sm'>4.0 Ov.0 M32 R4 W8.00 ECO.</p>
+            <p className='py-1 pb-3 text-white text-sm'>{best_bowler && `${best_bowler.bowling_overs}Ov ${best_bowler.bowling_maiden_overs}M ${best_bowler.bowling_runs_conceded}R ${best_bowler.bowling_wickets}W ${best_bowler.bowling_economy}EC`}</p>
           </div>
         </div>
         <div className='w-2/6'>

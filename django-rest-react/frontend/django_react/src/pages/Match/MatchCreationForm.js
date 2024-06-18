@@ -5,10 +5,9 @@ import { useNavigate } from 'react-router-dom';
 
 const MatchCreationForm = () => {
   const [homeTeam, setHomeTeam] = useState('');
-  console.log(homeTeam)
   const [homeTeamName, setHomeTeamName] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
-  console.log(awayTeam)
+  
   const [awayTeamName, setAwayTeamName] = useState('');
   const [date, setDate] = useState('');
   const [groundLocation, setGroundLocation] = useState('home');
@@ -40,9 +39,9 @@ const MatchCreationForm = () => {
   const [errorMessages, setErrorMessages] = useState({ home: [], away: [] });
   const [validationMessage, setValidationMessage] = useState('');
   const [TossWinner, setTossWinner] = useState('');
-  console.log(TossWinner)
+  
   const [TossElect, setTossElect] = useState('')
-  console.log(TossElect)
+  
 
   const navigate = useNavigate(); // Initialize navigate function
 
@@ -300,8 +299,8 @@ const MatchCreationForm = () => {
             <div className='border p-2 mt-1 mx-1 w-full bg-slate-100 flex items-center '>
               <div className='border flex p-2 m-2 w-3/4'>
                 <div className='px-3'>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                 </div>
                 <div className=''>
@@ -324,10 +323,10 @@ const MatchCreationForm = () => {
           </div>
 
           {/* <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}> */}
-          {teamsPlayedFor.map(team => (
+          {teamsPlayedFor.map((team, index) => (
 
           
-          <div className='m-1'>
+          <div key={index} className='m-1'>
             <button className={`w-full ${homeTeam === team.id ? 'border-blue-500' : 'border-gray-300'} border-2`} 
             onClick={() => [setHomeTeam(team.id), setHomeTeamName(team.team_name)] }
             >
@@ -340,9 +339,9 @@ const MatchCreationForm = () => {
                     <option key={team.id} value={team.id} className='font-medium p-1'>{team.team_name}</option>
                     <div className='flex'>
                       <div className='flex w-auto items-center justify-center pt-1 mr-6'>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 bg-slate-500 text-slate-200 rounded-full p-0.5 mx-2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-4 bg-slate-500 text-slate-200 rounded-full p-0.5 mx-2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                         </svg>
                         <p className='text-sm justify-center'>Thrissur</p>
                       </div>
@@ -372,8 +371,8 @@ const MatchCreationForm = () => {
             <div className='border p-2 mt-1 mx-1 w-full bg-slate-100 flex items-center'>
               <div className='border flex p-2 m-2 w-3/4'>
                 <div className='px-3'>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                 </div>
                 <div className=''>
@@ -395,8 +394,8 @@ const MatchCreationForm = () => {
             </div>
           </div>
           {/* <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)}> */}
-          {teamsPlayedAgainst.map(team => (
-            <div className='m-1'>
+          {teamsPlayedAgainst.map((team, index) => (
+            <div key={index} className='m-1'>
               <button className={`w-full ${awayTeam === team.id ? 'border-blue-500' : 'border-gray-300'} border-2`}
               onClick={() => [setAwayTeam(team.id), setAwayTeamName(team.team_name)] }
               >
@@ -409,9 +408,9 @@ const MatchCreationForm = () => {
                   <option key={team.id} value={team.id} className='font-medium p-1'>{team.team_name}</option>
                     <div className='flex'>
                       <div className='flex w-auto items-center justify-center pt-1 mr-6'>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 bg-slate-500 text-slate-200 rounded-full p-0.5 mx-2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-4 bg-slate-500 text-slate-200 rounded-full p-0.5 mx-2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                         </svg>
                         <p className='text-sm justify-center'>Thrissur</p>
                       </div>
