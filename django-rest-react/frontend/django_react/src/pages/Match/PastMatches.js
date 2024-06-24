@@ -32,10 +32,12 @@ function PastMatches() {
   return (
     <div className='sm:my-0 h-auto md:my-10 lg:my-0 flex flex-col items-center mx-auto bg-slate-100'>
       <div className='sm:w-full h-auto md:w-4/6 w-3/6 shadow border-slate-100 rounded-b-md px-4 py-3 my-4 bg-black-rgba'>
-        <div className='grid grid-cols-1 2xl:grid-cols-2 gap-4'>
+        
+
+
           <div>
             <h2 className='font-bold text-2xl mb-3'>Past Matches</h2>
-            <div>
+            <div className='grid grid-cols-1 2xl:grid-cols-2 gap-4'>
               {PastMatchess.length === 0 ? (
                 <p>No past matches available.</p>
               ) : (
@@ -88,7 +90,9 @@ function PastMatches() {
               )}
             </div>
           </div>
-        </div>
+
+
+        
       </div>
     </div>
   )

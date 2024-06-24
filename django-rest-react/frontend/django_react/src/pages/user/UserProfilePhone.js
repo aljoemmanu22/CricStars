@@ -551,7 +551,7 @@ const navigate = useNavigate()
                     <button onClick={() => setActiveTab('phoneCricprofile')}><p className='text-white text-base mr-2'>My Cricket Profile</p></button>
                     <div className="w-6 h-6 bg-red rounded-full flex items-center justify-center border-2 border-white">
                         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd"><path d="M21.883 12l-7.527 6.235.644.765 9-7.521-9-7.479-.645.764 7.529 6.236h-21.884v1h21.883z"/></svg>                </svg>
+                        <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fillRule="evenodd" clipRule="evenodd"><path d="M21.883 12l-7.527 6.235.644.765 9-7.521-9-7.479-.645.764 7.529 6.236h-21.884v1h21.883z"/></svg>                </svg>
                     </div>
                 </div>
                 <div className="absolute -bottom-16 left-4">

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'match',
     'scoring',
     'matchview',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,14 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'django_rest_backend.urls'
+
+
+# In-memory channel layer (for development)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 TEMPLATES = [
     {
@@ -91,6 +100,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'django_rest_backend.wsgi.application'
+ASGI_APPLICATION = 'django_rest_backend.asgi.application'
 
 
 # Database

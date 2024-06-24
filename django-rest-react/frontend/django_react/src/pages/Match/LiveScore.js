@@ -1,6 +1,85 @@
-import React from 'react'
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 
-function LiveScore(setSelectedSection) {
+
+function LiveScore({ setSelectedSection, matchId, setLiveMatchData }) {
+
+  const [matchData, setMatchData] = useState(null);
+  const [webSocket, setWebSocket] = useState(null);
+
+  const getRunsBackgroundClass = (runs) => {
+    if (runs === 4) return 'bg-orange-500';
+    if (runs === 6) return 'bg-green-500';
+    return 'bg-slate-200';
+  };
+
+  const handleExtras = (extras_type) => {
+    if (extras_type === 'wd') return 'Wd';
+    if (extras_type === 'bye')  return 'BY';
+    if (extras_type === 'lb') return 'LB'
+    if (extras_type === 'nb') return 'NB'
+  }
+
+  const token = localStorage.getItem('access');
+  const baseURL = 'http://127.0.0.1:8000';
+
+  useEffect(() => {
+    if (!matchId) return;
+
+
+    axios.get(`${baseURL}/api/scorecard-match-live-detail/${matchId}/`, {
+      headers: {
+        authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        setMatchData(response.data);
+        console.log(response.data)
+      })
+      .catch((error) => {
+        console.error('There was an error fetching the match details!', error);
+      });
+
+  
+    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/livematch/${matchId}/`);
+    setWebSocket(ws);
+  
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  
+    console.log('WebSocket object:', ws); // Check if WebSocket object is created
+  
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+    };
+  
+    console.log('WebSocket readyState:', ws.readyState);
+  
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setMatchData(data.match_data);
+      setLiveMatchData(data.match_data)
+      console.log('Received match data:', data.match_data); // Check if data is received correctly
+    };
+  
+    return () => {
+      if (ws && ws.readyState === WebSocket.OPEN) { // Close only if open
+        ws.close();
+      }
+    };
+  
+  }, [matchId]);
+  
+
+  if (!matchData) {
+    return <div>Loading...</div>;
+  }
+
+  const { home_team, away_team, current_striker, current_non_striker, current_bowler, last_ball, current_over } = matchData;
+
   return (
         <div className='bg-black-rgba rounded-lg'>
 
@@ -27,29 +106,29 @@ function LiveScore(setSelectedSection) {
             <div className='bg-white flex items-center justify-between border-b'>
               <div className='flex w-3/5'>
                 <div className='w-2/6'>
-                  <p className='pl-4 py-2'>Arjun</p>
+                  <p className='pl-4 py-2'>{matchData.current_striker && matchData.current_striker.first_name}</p>
                 </div>
               </div>
               <div className='flex w-full justify-end pr-3'>
-                <p className='text-center w-12'>84</p>
-                <p className='text-center w-12'>42</p>
-                <p className='text-center w-12'>7</p>
-                <p className='text-center w-12'>7</p>
-                <p className='text-center w-12'>260</p>
+                <p className='text-center w-12'>{matchData.current_striker && matchData.current_striker.batting_runs_scored}</p>
+                <p className='text-center w-12'>{matchData.current_striker && matchData.current_striker.batting_balls_faced}</p>
+                <p className='text-center w-12'>{matchData.current_striker && matchData.current_striker.batting_fours}</p>
+                <p className='text-center w-12'>{matchData.current_striker && matchData.current_striker.batting_sixes}</p>
+                <p className='text-center w-12'>{matchData.current_striker && matchData.current_striker.batting_strike_rate}</p>
               </div>
             </div>
             <div className='bg-white flex items-center justify-between border-b'>
               <div className='flex w-3/5'>
                 <div className='w-2/6'>
-                  <p className='pl-4 py-2'>Arjun</p>
+                  <p className='pl-4 py-2'>{matchData.current_non_striker && matchData.current_non_striker.first_name}</p>
                 </div>
               </div>
               <div className='flex w-full justify-end pr-3'>
-                <p className='text-center w-12'>84</p>
-                <p className='text-center w-12'>42</p>
-                <p className='text-center w-12'>7</p>
-                <p className='text-center w-12'>7</p>
-                <p className='text-center w-12'>260</p>
+              <p className='text-center w-12'>{matchData.current_non_striker && matchData.current_non_striker.batting_runs_scored}</p>
+                <p className='text-center w-12'>{matchData.current_non_striker && matchData.current_non_striker.batting_balls_faced}</p>
+                <p className='text-center w-12'>{matchData.current_non_striker && matchData.current_non_striker.batting_fours}</p>
+                <p className='text-center w-12'>{matchData.current_non_striker && matchData.current_non_striker.batting_sixes}</p>
+                <p className='text-center w-12'>{matchData.current_non_striker && matchData.current_non_striker.batting_strike_rate}</p>
               </div>
             </div>  
 
@@ -72,14 +151,14 @@ function LiveScore(setSelectedSection) {
             {/* Bowlers */}
             <div className='flex items-center justify-between border-b bg-white'>
               <div className=''>
-                <p className='pl-4 py-2 w-full'>Rahul Venu</p>
+                <p className='pl-4 py-2 w-full'>{matchData.current_bowler && matchData.current_bowler.first_name}</p>
               </div>
               <div className='flex justify-end pr-3'>
-                <p className='text-center w-12'>4</p>
-                <p className='text-center w-12'>1</p>
-                <p className='text-center w-12'>30</p>
-                <p className='text-center w-12'>1</p>
-                <p className='text-center w-12'>9.25</p>
+              <p className='text-center w-12'>{matchData.current_bowler && matchData.current_bowler.bowling_overs}</p>
+                <p className='text-center w-12'>{matchData.current_bowler && matchData.current_bowler.bowling_maiden_overs}</p>
+                <p className='text-center w-12'>{matchData.current_bowler && matchData.current_bowler.bowling_runs_conceded}</p>
+                <p className='text-center w-12'>{matchData.current_bowler && matchData.current_bowler.bowling_wickets}</p>
+                <p className='text-center w-12'>{matchData.current_bowler && matchData.current_bowler.bowling_economy}</p>
               </div>
             </div>
 
@@ -96,12 +175,19 @@ function LiveScore(setSelectedSection) {
                 <div className='mr-3'>
                   <p className='pl-4 py-2 font-semibold'>Recent :</p>
                 </div>
-                <div className='flex items-center justify-center mr-3'>
-                  <p className='text-sm bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center'>1</p>
-                </div>
-                <div className='flex items-center justify-center'>
-                  <p className='text-sm bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center'>1</p>
-                </div>
+                {matchData.current_over && matchData.current_over.map((ball, index) => (
+                  <div key={index} className='flex items-center justify-center mr-3'>
+                    <p className='text-sm bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center'>
+                      {ball.extras_type != ''? 
+                        (ball.extras_type === 'wd' ? 'wd' :
+                        ball.extras_type === 'nb' ? 'nb' :
+                        ball.extras_type === 'bye' ? 'by' :
+                        ball.extras_type === 'lb' ? 'lb' :
+                        ball.runs) :
+                        ball.runs}
+                    </p>
+                  </div>
+                ))}
               </div>
 
             </div>
@@ -114,7 +200,7 @@ function LiveScore(setSelectedSection) {
             <div className='bg-white text-xl pl-4 py-3 rounded-t-lg'>
               <p>Commentary</p>
             </div>
-            <div className='border-b pl-3 items-center bg-teal-300 py-2'>
+            {/* <div className='border-b pl-3 items-center bg-teal-300 py-2'>
               <div className='pl-4 flex justify-between py-1'>
                 <div className=''>
                   <p className='font-bold'>End of Over 13</p>
@@ -148,97 +234,99 @@ function LiveScore(setSelectedSection) {
                   <p className='pr-3 pb-2'>&nbsp;</p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
+          {matchData.current_over && matchData.current_over.map((ball, index) => (
+        <div key={index}>
 
-          <div className='border-b pl-3 flex items-center justify-start bg-white'>
+          {/* for first ball */}
+          {ball.ball_in_over == '1' &&        
             <div>
-              <p className='pl-3 py-4 w-12'>0.2</p>
-            </div>
-            <div className='pl-4 w-14'>
-              <p className=' bg-pink-300 text-white p-2 rounded-full w-10 flex items-center justify-center'>WD</p>
-            </div>
-            <div className='pl-4'>
-              <div>
-                <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
+              <div className='border-b pl-3 flex items-center justify-start bg-white'>
+                <div className='pl-3 w-14 py-3'>
+                  <img className='w-10 rounded-full' src="/images/userlogo.png"/>
+                  <p>bowler</p>
+                </div>
+                <div>
+                  <div>
+                    <p className='pl-3 font-medium'>{ball.bowler.first_name}</p>
+                  </div>
+                  <div>
+                    <p className='pl-3 text-xs'>{ball.bowler.bowling_style}</p>
+                  </div>
+                  <div className='flex text-center text-sm'>
+                    <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > WICKETS:<span className='font-semibold border-r pr-1 border-black'>{ball.bowler.bowling_wickets}</span> ECO:<span className='font-semibold border-r pr-1 border-black'>{ball.bowler.bowling_economy}</span> BEST:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
-              </div>
             </div>
-          </div>
+          }
 
-          <div className='border-b pl-3 flex items-center justify-start bg-white'>
-            <div>
-              <p className='pl-4 py-4 w-12'>0.1</p>
-            </div>
-            <div className='pl-4 w-14'>
-              <p className=' bg-amber-400 text-white p-2 rounded-full w-10 flex items-center justify-center'>4</p>
-            </div>
-            <div className='pl-4'>
+          {/* For non-wicket commentary */}
+          {(ball.runs !== 0 || ball.runs === 0) && ball.how_out === '' && ball.extras_type === '' && (
+            <div className='border-b pl-3 flex items-center justify-start bg-white'>
               <div>
-                <p className='font-bold'>Krishnaraj ps to ANOOP, OUT Caught out, Caught by Anoop AA</p>
+                <p className='pl-3 py-4 w-12'>{ball.over}.{ball.ball_in_over}</p>
               </div>
-              <div>
-                <p>ANOOP c Anoop AA b Krishnaraj ps (4r 3b 1x4s 0x6s SR: 133.33)</p>
+              <div className='pl-4 w-14'>
+                <p className={`text-white p-2 rounded-full w-10 flex items-center justify-center ${getRunsBackgroundClass(ball.runs)}`}>{ball.runs}</p>
+              </div>
+              <div className='pl-4'>
+                <div>
+                  <p className='font-bold'>{ball.bowler.first_name} to {ball.striker.first_name}, {ball.runs} run{ball.runs !== 1 && 's'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className='bg-white'>
+          {/* For no ball, wide and other extras commentary */}
+          {ball.extras_type !== ''  && ball.how_out === '' && (
+            <div className='border-b pl-3 flex items-center justify-start bg-white'>
+              <div>
+                <p className='pl-3 py-4 w-12'>{ball.over}.{ball.ball_in_over}</p>
+              </div>
+              <div className='pl-4 w-14'>
+                <p className={`text-white p-2 rounded-full w-10 flex items-center justify-center bg-pink-400`}>{handleExtras(ball.extras_type)}</p>
+              </div>
+              <div className='pl-4'>
+                <div>
+                  <p className='font-bold'>{ball.bowler.first_name} to {ball.striker.first_name}, {ball.extras_type} {ball.runs != 0 &&  ball.runs} {ball.runs != 0 && 'run'}{ball.runs > 1 && 's'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* For wicket commentary */}
+          {(ball.how_out !== '' && ball.how_out != 'run-out') && (
             <div className='border-b pl-3 flex items-center justify-start'>
-              <div className='pl-3 w-14 py-3'>
-                <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-                <p>NEXT</p>
-              </div>
               <div>
+                <p className='pl-3 py-4 w-12'>{ball.over}.{ball.ball_in_over}</p>
+              </div>
+              <div className='pl-4 w-14'>
+                <p className='bg-red-500 text-white p-2 rounded-full w-10 flex items-center justify-center'>W</p>
+              </div>
+              <div className='pl-4'>
+                {ball.how_out != 'run_out' && (
+                  <div>
+                    <p className='font-bold'>{ball.bowler.first_name} to {ball.striker.first_name}, {ball.how_out === 'catch_out' && 'OUT Caught out, Caught by'} {ball.how_out === 'stumped' && 'OUT stumped, he took advance but missed the ball, stumped by'} {ball.how_out === 'LBW' && 'OUT lbw, he miss the line'} {ball.how_out === 'bowled' && 'OUT bolwled, tight yorker'} {ball.people_involved}</p>
+                  </div>
+                )}
+                {ball.how_out === 'run_out' && (
+                  <div>
+                    <p className='font-bold'>{ball.bowler.first_name} to {ball.striker.first_name}, {ball.who_out === ball.onstrike &&  `${ball.striker.first_name} by ${ball.people_involved}`} {ball.who_out === ball.offstrike &&  `${ball.non_striker.first_name} by ${ball.people_involved}`}</p>
+                  </div>
+                )}
                 <div>
-                  <p className='pl-3 font-medium'>Krishnaraj P S</p>
-                </div>
-                <div>
-                  <p className='pl-3 text-xs'>Right-arm fast</p>
-                </div>
-                <div className='flex text-center text-sm'>
-                  <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > WICKETS:<span className='font-semibold border-r pr-1 border-black'>4</span> ECO:<span className='font-semibold border-r pr-1 border-black'>4</span> BEST:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
+                  <p>{ball.who_out === matchData.current_striker ? matchData.current_striker.first_name : matchData.current_non_striker.first_name}
+                    {ball.who_out === matchData.current_striker && (<>{matchData.current_striker.batting_runs_scored}r {matchData.current_striker.batting_balls_faced}b {matchData.current_striker.bating_fours}x4s {matchData.current_striker.batting_sixes}x6s SR: {matchData.current_striker.batting_strike_rate}</>)}
+                    {ball.who_out === matchData.current_non_striker && (<>{matchData.current_non_striker.batting_runs_scored}r {matchData.current_non_striker.batting_balls_faced}b {matchData.current_non_striker.bating_fours}x4s {matchData.current_non_striker.batting_sixes}x6s SR: {matchData.current_non_striker.batting_strike_rate}</>)}
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className='border-b pl-3 flex items-center justify-start bg-white'>
-            <div className='pl-3 w-14 py-3'>
-              <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-              <p>NEXT</p>
-            </div>
-            <div>
-              <div>
-                <p className='pl-3 w-12 font-medium'>Anoop</p>
-              </div>
-              <div>
-                <p className='pl-3 w-12 text-xs'>RHD</p>
-              </div>
-              <div className='flex text-center text-sm'>
-                <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > RUNS:<span className='font-semibold border-r pr-1 border-black'>4</span> AVG:<span className='font-semibold border-r pr-1 border-black'>4</span> SR:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
-              </div>
-            </div>
-          </div>
-          <div className='border-b pl-3 flex items-center justify-start bg-white'>
-            <div className='pl-3 w-14 py-3'>
-              <p className=' bg-slate-200 text-white p-2 rounded-full w-10 flex items-center justify-center'>0</p>
-              <p>NEXT</p>
-            </div>
-            <div>
-              <div>
-                <p className='pl-3 w-12 font-medium'>Anoop</p>
-              </div>
-              <div>
-                <p className='pl-3 w-12 text-xs'>RHD</p>
-              </div>
-              <div className='flex text-center text-sm'>
-                <p className='pl-3'>MAT: <span className='font-semibold border-r pr-1 border-black'>4</span > RUNS:<span className='font-semibold border-r pr-1 border-black'>4</span> AVG:<span className='font-semibold border-r pr-1 border-black'>4</span> SR:<span className='font-semibold border-r pr-1 border-black'>4</span></p>
-              </div>
-            </div>
-          </div>
+          )}
+        </div>
+          ))}
           <div className='bg-white text-normal pl-4 py-3 rounded-b-lg flex items-center justify-center'>
             <button onClick={() => setSelectedSection('commentary')}>
               <p className='text-red-700 font-bold'>FULL COMMENTARY</p>

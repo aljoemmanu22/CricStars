@@ -28,10 +28,33 @@ class MatchesViewSet(viewsets.ModelViewSet):
     def get_live_scheduled_matches(self, request):
         live_matches = Match.objects.filter(status='live')
         scheduled_matches = Match.objects.filter(status='scheduled')
-        live_serializer = MatchSerializer(live_matches, many=True)
+
+        enhanced_live_matches = []
+        for match in live_matches:
+            last_ball_innings1 = BallByBall.objects.filter(match_id=match, innings=1).order_by('-over', '-ball_in_over').first()
+            last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=2).order_by('-over', '-ball_in_over').first()
+            
+            match_data = {
+                'match': MatchSerializer(match).data,
+                'last_ball_innings1': {
+                    'total_runs': last_ball_innings1.total_runs,
+                    'total_wickets': last_ball_innings1.total_wickets,
+                    'overs': last_ball_innings1.over,
+                    'balls': last_ball_innings1.ball_in_over,
+                } if last_ball_innings1 else None,
+                'last_ball_innings2': {
+                    'total_runs': last_ball_innings2.total_runs,
+                    'total_wickets': last_ball_innings2.total_wickets,
+                    'overs': last_ball_innings2.over,
+                    'balls': last_ball_innings2.ball_in_over,
+                } if last_ball_innings2 else None,
+            }
+            enhanced_live_matches.append(match_data)
+
         scheduled_serializer = MatchSerializer(scheduled_matches, many=True)
+
         return Response({
-            'live_matches': live_serializer.data,
+            'live_matches': enhanced_live_matches,
             'scheduled_matches': scheduled_serializer.data
         })
     
@@ -40,13 +63,36 @@ class MatchesViewSet(viewsets.ModelViewSet):
         user = request.user
         live_matches = Match.objects.filter(status='live', created_by=user)
         scheduled_matches = Match.objects.filter(status='scheduled', created_by=user)
-        live_serializer = MatchSerializer(live_matches, many=True)
+
+        enhanced_live_matches = []
+        for match in live_matches:
+            last_ball_innings1 = BallByBall.objects.filter(match_id=match, innings=1).order_by('-over', '-ball_in_over').first()
+            last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=2).order_by('-over', '-ball_in_over').first()
+            
+            match_data = {
+                'match': MatchSerializer(match).data,
+                'last_ball_innings1': {
+                    'total_runs': last_ball_innings1.total_runs,
+                    'total_wickets': last_ball_innings1.total_wickets,
+                    'overs': last_ball_innings1.over,
+                    'balls': last_ball_innings1.ball_in_over,
+                } if last_ball_innings1 else None,
+                'last_ball_innings2': {
+                    'total_runs': last_ball_innings2.total_runs,
+                    'total_wickets': last_ball_innings2.total_wickets,
+                    'overs': last_ball_innings2.over,
+                    'balls': last_ball_innings2.ball_in_over,
+                } if last_ball_innings2 else None,
+            }
+            enhanced_live_matches.append(match_data)
+
         scheduled_serializer = MatchSerializer(scheduled_matches, many=True)
+
         return Response({
-            'live_matches': live_serializer.data,
+            'live_matches': enhanced_live_matches,
             'scheduled_matches': scheduled_serializer.data
         })
-    
+
     @action(detail=False, methods=['get'], url_path='scorecard-past')
     def get_past_matches(self, request):
         past_matches = Match.objects.filter(status='past')
@@ -56,7 +102,7 @@ class MatchesViewSet(viewsets.ModelViewSet):
         for match in past_matches:
             last_ball_innings1 = BallByBall.objects.filter(match_id=match, innings=1).order_by('-over', '-ball_in_over').first()
             last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=2).order_by('-over', '-ball_in_over').first()
-        # If innings 2 does not exist, try to get the last ball of innings 3
+            # If innings 2 does not exist, try to get the last ball of innings 3
             if not last_ball_innings2:
                 last_ball_innings2 = BallByBall.objects.filter(match_id=match, innings=3).order_by('-over', '-ball_in_over').first()
             match_data = {
@@ -79,7 +125,7 @@ class MatchesViewSet(viewsets.ModelViewSet):
         return Response({
             'past_matches': enhanced_matches,
         })
-    
+
     
 
 @api_view(['POST'])
@@ -494,8 +540,20 @@ from django.db import connection
 from django.db import transaction
 
 
-logger = logging.getLogger(__name__)
+def broadcast_match_update(match_id):
+    channel_layer = get_channel_layer()
+    match = Match.objects.get(id=match_id)
+    match_data = MatchLiveSerializer(match).data
+    async_to_sync(channel_layer.group_send)(
+        f'match_{match_id}',
+        {
+            'type': 'match_update',
+            'match_data': match_data
+        }
+    )
 
+
+logger = logging.getLogger(__name__)
 
 @transaction.atomic
 @api_view(['POST']) 
@@ -720,6 +778,9 @@ def update_score(request):
                 bowler_stats.bowling_overs = f"{over}.{ball_in_over}"
             bowler_stats.save()
             bowler_stats.save()
+        
+        # Broadcast the match update
+        broadcast_match_update(match.id)
 
         return Response({'message': 'Score updated successfully'}, status=status.HTTP_200_OK)
     except Exception as e:
@@ -1070,3 +1131,35 @@ def match_teams_players(request, match_id):
         })
     except Match.DoesNotExist:
         return Response(status=404)
+    
+
+# views.py
+from rest_framework import generics
+from rest_framework.response import Response
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .serializers import MatchLiveSerializer
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+class MatchLiveDetailView(generics.RetrieveAPIView):
+    queryset = Match.objects.all()
+    serializer_class = MatchLiveSerializer
+
+    def broadcast_match_update(self, match_data):
+        logger.info(f"Broadcasting match update: {match_data}")
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'match_{match_data["id"]}',
+            {
+                'type': 'match_update',
+                'match_data': match_data
+            }
+        )
+
+    def get(self, request, *args, **kwargs):
+        match_data = super().get(request, *args, **kwargs).data
+        self.broadcast_match_update(match_data)
+        return Response(match_data)

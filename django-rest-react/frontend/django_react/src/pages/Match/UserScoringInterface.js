@@ -21,6 +21,7 @@ function UserScoringInterface() {
         })
         .then(response => {
             setLiveMatches(response.data.live_matches);
+            console.log(response.data)
             setScheduledMatches(response.data.scheduled_matches);
         })
         .catch(error => {
@@ -42,38 +43,38 @@ function UserScoringInterface() {
                             <p>No live matches available.</p>
                         ) : (
                             liveMatches.map(match => (
-                                <div key={match.id} className='p-4 border cursor-pointer' onClick={() => handleMatchClick(match.id)}>
+                                <div key={match.match.id} className='p-4 border cursor-pointer' onClick={() => handleMatchClick(match.match.id)}>
                                     <div className='h-44 w-full bg-white rounded-lg'>
                                         <div className='w-full border-b border-slate-300 h-1/5 flex items-center justify-center'>
-                                            <p className='text-center sm:text-sm'>{match.home_team.team_name} vs {match.away_team.team_name}</p>
+                                            <p className='text-center sm:text-sm'>{match.match.home_team.team_name} vs {match.match.away_team.team_name}</p>
                                         </div>
                                         <div className='w-full h-1/5 flex px-3'>
                                             <div className='flex items-center'>
-                                                <p className='sm:text-xs text-sm flex text-center justify-center'>created by, {match.created_by.first_name}, {match.date}, {match.overs} overs</p>
+                                                <p className='sm:text-xs text-sm flex text-center justify-center'>created by, {match.match.created_by.first_name}, {match.match.date}, {match.match.overs} overs</p>
                                             </div>
                                             <div className='ml-auto flex items-center'>
-                                                <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>{match.status}</span>
-                                            </div>
-                                        </div>
-                                        <div className='w-full h-1/5 flex px-3'>
-                                            <div className='flex items-center'>
-                                                <p className='text-lg flex text-center justify-center text-emerald-600 font-extrabold'>{match.home_team.team_name}</p>
-                                            </div>
-                                            <div className='ml-auto flex items-center'>
-                                                <span className='text-lg h-5 p-1 flex items-center justify-center text-emerald-600 font-extrabold'>0/0</span><span className='text-xs'>({match.overs}/0)</span>
+                                                <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>{match.match.status}</span>
                                             </div>
                                         </div>
                                         <div className='w-full h-1/5 flex px-3'>
                                             <div className='flex items-center'>
-                                                <p className='text-lg flex text-center justify-center font-extrabold'>{match.away_team.team_name}</p>
+                                                <p className='text-lg flex text-center justify-center text-emerald-600 font-extrabold'>{match.match.home_team.team_name}</p>
                                             </div>
                                             <div className='ml-auto flex items-center'>
-                                                <span className='text-lg h-5 p-1 flex items-center justify-center font-extrabold'>0/0</span><span className='text-xs'>({match.overs}/0)</span>
+                                                <span className='text-lg h-5 p-1 flex items-center justify-center text-emerald-600 font-extrabold'>{match.last_ball_innings1 ? `${match.last_ball_innings1.total_runs}/${match.last_ball_innings1.total_wickets}` : '0/0'}</span><span className='text-xs'>({match.last_ball_innings1 ? `${match.last_ball_innings1.overs}/${match.last_ball_innings1.balls}` : `${match.match.overs}/0`})</span>
+                                            </div>
+                                        </div>
+                                        <div className='w-full h-1/5 flex px-3'>
+                                            <div className='flex items-center'>
+                                                <p className='text-lg flex text-center justify-center font-extrabold'>{match.match.away_team.team_name}</p>
+                                            </div>
+                                            <div className='ml-auto flex items-center'>
+                                                <span className='text-lg h-5 p-1 flex items-center justify-center text-emerald-600 font-extrabold'>{match.last_ball_innings2 ? `${match.last_ball_innings2.total_runs}/${match.last_ball_innings2.total_wickets}` : '0/0'}</span><span className='text-xs'>({match.last_ball_innings2 ? `${match.last_ball_innings2.overs}/${match.last_ball_innings2.balls}` : `${match.match.overs}/0`})</span>
                                             </div>
                                         </div>
                                         <div className='w-full h-1/5 flex px-3 border-t border-slate-300'>
                                             <div className='flex items-center'>
-                                            <p className='text-sm flex text-center justify-center space-x-1'><span className='font-extrabold'>{match.toss_winner}</span> <span>won the toss and elected to</span><span className='font-extrabold'>{match.elected_to}</span><span>first</span></p>
+                                            <p className='text-sm flex text-center justify-center space-x-1'><span className='font-extrabold'>{match.match.toss_winner}</span> <span>won the toss and elected to</span><span className='font-extrabold'>{match.match.elected_to}</span><span>first</span></p>
                                             </div>
                                         </div>
                                     </div>

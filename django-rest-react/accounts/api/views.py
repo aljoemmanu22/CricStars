@@ -195,20 +195,28 @@ class UserView(APIView):
         }
         return Response(content)
     
+from match.models import MatchTeamPlayer
+
 class UserDetails(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = User.objects.get(id=request.user.id)
-       
         data = UserSerializer(user).data
-        try :
+
+        try:
             profile_pic = user.User_Profile.profile_pic
-            data['profile_pic'] = request.build_absolute_uri('/')[:-1]+profile_pic.url
+            data['profile_pic'] = request.build_absolute_uri('/')[:-1] + profile_pic.url
         except:
-            profile_pic = ''
-            data['profile_pic']=''
-        content = data
-        return Response(content)
+            data['profile_pic'] = ''
+
+        # Get teams the user has played for
+        match_team_players = MatchTeamPlayer.objects.filter(player_id=user)
+        teams = {mtp.team_id for mtp in match_team_players}
+        teams_data = [{'team_name': team.team_name, 'home_ground': team.home_ground} for team in teams]
+        data['teams'] = teams_data
+
+        return Response(data)
     
     
 class UserImageDetailsUpdate(APIView):

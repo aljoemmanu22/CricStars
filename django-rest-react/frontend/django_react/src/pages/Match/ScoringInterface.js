@@ -123,29 +123,29 @@ function ScoringInterface() {
       });
       console.log(response.data.message);
       setResult(result);
-      fetchMatchDetails(
-        matchId, 
-        token, 
-        setMatchDetails, 
-        setTossWinner, 
-        setTossElected, 
-        setMatchStatus, 
-        setBattingTeamPlayers, 
-        setBowlingTeamPlayers, 
-        setTotalRuns, 
-        setTotalWickets, 
-        setOver, 
-        setBallInOver, 
-        setStriker, 
-        setStrikerData, 
-        setNonStriker, 
-        setNonStrikerData, 
-        setSelectedBowler, 
-        setSelectedBowlerData, 
-        setIsSelectionDone, 
-        checkForMissingInfo, 
-        setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
-      );
+      // fetchMatchDetails(
+      //   matchId, 
+      //   token, 
+      //   setMatchDetails, 
+      //   setTossWinner, 
+      //   setTossElected, 
+      //   setMatchStatus, 
+      //   setBattingTeamPlayers, 
+      //   setBowlingTeamPlayers, 
+      //   setTotalRuns, 
+      //   setTotalWickets, 
+      //   setOver, 
+      //   setBallInOver, 
+      //   setStriker, 
+      //   setStrikerData, 
+      //   setNonStriker, 
+      //   setNonStrikerData, 
+      //   setSelectedBowler, 
+      //   setSelectedBowlerData, 
+      //   setIsSelectionDone, 
+      //   checkForMissingInfo, 
+      //   setWides, setNoBalls, setLegbyes, setByes, setTotalExtras, setRunsInOver, setWicketsInOver
+      // );
       setIsSelectionDone(true)
       setIsNewBowlerPopupVisible(false)
       setIsResultModalVisible(true); 
@@ -167,6 +167,7 @@ function ScoringInterface() {
         },
       });
 
+      if (response.data.match.status !== 'past') {
       if (response.data.match.innings === 2) {
         setFirst_innings_last_ball(response.data.first_innings_last_ball)
         set_first_innings_total(response.data.first_innings_total)
@@ -214,9 +215,7 @@ function ScoringInterface() {
         setLastBall(response.data.lastBall)
         
         if (response.data.last_ball.ball_in_over == 6) {
-          console.log('what')
           if (response.data.last_ball.bowler == response.data.current_bowler.player_id) {
-            console.log('dig')
             setIsNewBowlerPopupVisible(true)
           }
         }
@@ -294,6 +293,7 @@ function ScoringInterface() {
 
       setCurrentOverEvents([])
       setCurrentOverEvents(response.data.current_over);
+    }
     } catch (error) {
       console.error("Error fetching match details:", error);
     }
@@ -752,19 +752,19 @@ function ScoringInterface() {
     const bowlerName = selectedBowler.name;
     switch (outType) {
         case 'bowled':
-            peopleInvolvedDetail = [{ player_1: bowlerName }];
+            peopleInvolvedDetail = [{ player_1: `b ${bowlerName}` }];
             break;
         case 'catch_out':
-            peopleInvolvedDetail = [{ player_1: fielderName1, player_2: bowlerName }];
+            peopleInvolvedDetail = [{ player_1: `c ${fielderName1}`, player_2: `b ${bowlerName}` }];
             break;
         case 'LBW':
-            peopleInvolvedDetail = [{ player_1: bowlerName }];
+            peopleInvolvedDetail = [{ player_1: `b ${bowlerName}` }];
             break;
         case 'stumped':
-            peopleInvolvedDetail = [{ player_1: fielderName1, player_2: bowlerName }];
+            peopleInvolvedDetail = [{ player_1: `c ${fielderName1}`, player_2: `b ${bowlerName}` }];
             break;
         case 'run_out':
-            peopleInvolvedDetail = [{ player_1: fielderName1, player_2: fielderName2 }];
+            peopleInvolvedDetail = [{ player_1: `c ${fielderName1}`, player_2: `b ${fielderName2}` }];
             break;
         default:
             break;

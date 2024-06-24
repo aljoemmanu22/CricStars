@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useDebugValue } from 'react'
 import axios from 'axios'
 import userimg from '../../images/user.png'
 import useprofileimg from '../../images/user_profile1.png'
@@ -235,155 +235,108 @@ const logout=()=>{
 };
 
 const PlayedMatches = () => {
+
+  const navigate = useNavigate()
+  const baseURL = 'http://127.0.0.1:8000'
+  const token = localStorage.getItem('access');
+  const [PastMatchess, setPastMatchess] = useState([])
+
+
+  useEffect(() => {
+    axios.get(baseURL + '/api/matches/scorecard-past/', {
+      headers: {
+        'authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(response => {
+        console.log(response.data)
+        setPastMatchess(response.data.past_matches);
+        console.log(response.data)
+      })
+      .catch(error => {
+        console.error('There was an error fetching the matches!', error);
+      });
+  }, []);
+
   return  <div className='h-screen w-5/6'>
   <div className='shadow border-slate-100 rounded-b-md px-4 py-3'>
   <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-    <div className='h-44 w-full bg-white rounded-lg'>
-      <div className='w-full border-b border-slate-300 h-1/5 flex items-center justify-center'>
-        <p className='text-center'>Individual Match</p>
-      </div>
-      <div className='w-full h-1/5 flex px-3'>
-        <div className='flex items-center'>
-          <p className='text-sm flex text-center justify-center'>kanakamala, chalakudy, 27-Apr-2024, 4 overs</p>
-        </div>
-        <div className='ml-auto flex items-center'>
-          <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>PAST</span>
-        </div>
-      </div>
-      <div className='w-full h-1/5 flex px-3'>
-        <div className='flex items-center'>
-          <p className='text-lg flex text-center justify-center text-emerald-600 font-extrabold'>Team 1</p>
-        </div>
-        <div className='ml-auto flex items-center'>
-          <span className='text-lg h-5 p-1 flex items-center justify-center text-emerald-600 font-extrabold'>16/0</span><span className='text-xs'>(4/0)</span>
-        </div>
-      </div>
-      <div className='w-full h-1/5 flex px-3'>
-        <div className='flex items-center'>
-          <p className='text-lg flex text-center justify-center font-extrabold'>Team 2</p>
-        </div>
-        <div className='ml-auto flex items-center'>
-          <span className='text-lg h-5 p-1 flex items-center justify-center font-extrabold'>15/0</span><span className='text-xs'>(4/0)</span>
-        </div>
-      </div>
-      <div className='w-full h-1/5 flex px-3'>
-        <div className='flex items-center'>
-          <p className='text-sm flex text-center justify-center space-x-1'><span className='font-extrabold'>Yes</span><span>won by</span><span className='font-extrabold'>1 run</span></p>
-        </div>
-      </div>
-    </div>
 
-    <div className='h-44 w-full bg-white rounded-lg'>
+  {PastMatchess.map(match => (
+    <div key={match.match.id} className='h-44 w-full bg-white rounded-lg'  onClick={() => navigate(`/match-details/${match.match.id}`)}>
       <div className='w-full border-b border-slate-300 h-1/5 flex items-center justify-center'>
-        <p className='text-center'>Individual Match</p>
+        <p className='text-center'>{match.match.home_team.team_name} vs {match.match.away_team.team_name}</p>
       </div>
       <div className='w-full h-1/5 flex px-3'>
         <div className='flex items-center'>
-          <p className='text-sm flex text-center justify-center'>kanakamala, chalakudy, 27-Apr-2024, 4 overs</p>
+          <p className='text-sm flex text-center justify-center'>created by, {match.match.created_by.first_name} {match.match.created_by.last_name}, {match.match.date}, {match.match.overs} overs</p>
         </div>
         <div className='ml-auto flex items-center'>
-          <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>PAST</span>
+          <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>{match.match.status}</span>
         </div>
       </div>
       <div className='w-full h-1/5 flex px-3'>
         <div className='flex items-center'>
-          <p className='text-lg flex text-center justify-center text-emerald-600 font-extrabold'>Team 1</p>
+          <p className='text-lg flex text-center justify-center text-emerald-600 font-extrabold'>{match.match.home_team.team_name}</p>
         </div>
         <div className='ml-auto flex items-center'>
-          <span className='text-lg h-5 p-1 flex items-center justify-center text-emerald-600 font-extrabold'>16/0</span><span className='text-xs'>(4/0)</span>
+        <span className='text-lg h-5 p-1 flex items-center justify-center text-emerald-600 font-extrabold'>{match.last_ball_innings1.total_runs}/{match.last_ball_innings1.total_wickets}</span><span className='text-xs'>({match.last_ball_innings1.balls === 6 ? match.last_ball_innings1.overs + 1 : match.last_ball_innings1.overs}/{match.last_ball_innings1.balls === 6 ? 0 : match.last_ball_innings1.balls})</span>
         </div>
       </div>
       <div className='w-full h-1/5 flex px-3'>
         <div className='flex items-center'>
-          <p className='text-lg flex text-center justify-center font-extrabold'>Team 2</p>
+          <p className='text-lg flex text-center justify-center font-extrabold'>{match.match.away_team.team_name}</p>
         </div>
         <div className='ml-auto flex items-center'>
-          <span className='text-lg h-5 p-1 flex items-center justify-center font-extrabold'>15/0</span><span className='text-xs'>(4/0)</span>
+        <span className='text-lg h-5 p-1 flex items-center justify-center font-extrabold'>{match.last_ball_innings2.total_runs}/{match.last_ball_innings2.total_wickets}</span><span className='text-xs'>({match.last_ball_innings2.balls === 6 ? match.last_ball_innings2.overs + 1 : match.last_ball_innings2.overs}/{match.last_ball_innings2.balls === 6 ? 0 : match.last_ball_innings2.balls})</span>
         </div>
       </div>
       <div className='w-full h-1/5 flex px-3'>
         <div className='flex items-center'>
-          <p className='text-sm flex text-center justify-center space-x-1'><span className='font-extrabold'>Yes</span><span>won by</span><span className='font-extrabold'>1 run</span></p>
+          <p className='text-sm flex text-center justify-center space-x-1'><span className='font-extrabold'>{match.match.result}</span></p>
         </div>
       </div>
     </div>
+  ))}
+
   </div>
 </div> 
 </div> 
      
 };
 
-const Teams = () => {
+const Teams = ({userDetails}) => {
+  console.log(userDetails)
   return    <div className='h-screen w-5/6'>
   <div className='shadow border-slate-100 rounded-b-md px-4 py-3'>
   <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-    <div className='h-28 w-full bg-white rounded-lg flex'>
-      <div className='w-auto pl-4 pt-3'>
-        <img src="/images/AP.png" className="h-20 cursor-pointer" alt="Logo"/>
-      </div>
-      <div className='pl-2.5 pt-2.5' >
-        <div className=' w-72 border-b border-slate-300 h-1/2'>
-          <p className='font-medium'>Saranghi Perambra</p>
-          <p className='text-sm justify-center'>Since 2/feb/2024</p>
-        </div>
-        <div className='w-full h-1/2 px-1 flex  items-center'>
-          <div className='items-center border-r border-slate-300 pr-2'>
-            <p className='text-sm'>Played 1</p>
-          </div>
-          <div className='items-center border-r border-slate-300 px-2'>
-            <p className='text-sm'>Won 1</p>
-          </div>
-          <div className='items-center border-slate-300 px-2'>
-            <p className='text-sm'>Lost 1</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div className='h-28 w-full bg-white rounded-lg flex'>
-      <div className='w-auto pl-4 pt-3'>
-        <img src="/images/AP.png" className="h-20 cursor-pointer" alt="Logo"/>
-      </div>
-      <div className='pl-2.5 pt-2.5' >
-        <div className=' w-72 border-b border-slate-300 h-1/2'>
-          <p className='font-medium'>Saranghi Perambra</p>
-          <p className='text-sm justify-center'>Since 2/feb/2024</p>
-        </div>
-        <div className='w-full h-1/2 px-1 flex  items-center'>
-          <div className='items-center border-r border-slate-300 pr-2'>
-            <p className='text-sm'>Played 1</p>
-          </div>
-          <div className='items-center border-r border-slate-300 px-2'>
-            <p className='text-sm'>Won 1</p>
-          </div>
-          <div className='items-center border-slate-300 px-2'>
-            <p className='text-sm'>Lost 1</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div className='h-28 w-full bg-white rounded-lg flex'>
-      <div className='w-auto pl-4 pt-3'>
-        <img src="/images/AP.png" className="h-20 cursor-pointer" alt="Logo"/>
-      </div>
-      <div className='pl-2.5 pt-2.5' >
-        <div className=' w-72 border-b border-slate-300 h-1/2'>
-          <p className='font-medium'>Saranghi Perambra</p>
-          <p className='text-sm justify-center'>Since 2/feb/2024</p>
+    {userDetails && userDetails.teams.map((team, index) =>( 
+      <div key={index} className='h-28 w-full bg-white rounded-lg flex'>
+        <div className='w-auto pl-4 pt-3'>
+          <img src="/images/AP.png" className="h-20 cursor-pointer" alt="Logo"/>
         </div>
-        <div className='w-full h-1/2 px-1 flex  items-center'>
-          <div className='items-center border-r border-slate-300 pr-2'>
-            <p className='text-sm'>Played 1</p>
+        <div className='pl-2.5 pt-2.5' >
+          <div className=' w-72 border-b border-slate-300 h-1/2'>
+            <p className='font-medium'>{team.team_name}</p>
+            <p className='text-sm justify-center'>Home Ground : {team.home_ground}</p>
           </div>
-          <div className='items-center border-r border-slate-300 px-2'>
-            <p className='text-sm'>Won 1</p>
-          </div>
-          <div className='items-center border-slate-300 px-2'>
-            <p className='text-sm'>Lost 1</p>
+          <div className='w-full h-1/2 px-1 flex  items-center'>
+            <div className='items-center border-r border-slate-300 pr-2'>
+              <p className='text-sm'>Played 1</p>
+            </div>
+            <div className='items-center border-r border-slate-300 px-2'>
+              <p className='text-sm'>Won 1</p>
+            </div>
+            <div className='items-center border-slate-300 px-2'>
+              <p className='text-sm'>Lost 1</p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    ))}
 
   </div>
 </div>
@@ -464,13 +417,13 @@ function UserProfile() {
   const renderContent = () => {
     switch (activeTab) {
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage userDetails={userDetails}/>;
       case 'matches':
         return <PlayedMatches />;
       case 'teams':
-        return <Teams />;
-      // default:
-      //   return <ProfilePage />;
+        return <Teams userDetails={userDetails}/>;
+      default:
+        return <ProfilePage />;
     }
   }
 
@@ -483,21 +436,21 @@ function UserProfile() {
         <img src={useprofileimg} className="img-fluid" alt='img'/>
         <div className='flex-col'>
           <p className='text-orange-500 pl-5 text-2xl'>Hard Hitter</p>
-          <p className='text-white pl-5 text-2xl'>Aljo Jose</p>
+          <p className='text-white pl-5 text-2xl'>{userDetails && userDetails.first_name}</p>
           <p className='text-orange-500 pl-5 text-2xl'>----------------------------</p>
-          <p className='text-white pl-5 text-base'>RHB | Right-Leg Break</p>
+          <p className='text-white pl-5 text-base'>{userDetails && userDetails.batting_style} | {userDetails && userDetails.bowling_style}</p>
         </div>   
         <div className='flex pl-96 text-center justify-between h-auto'>
           <div className='bg-black-rgba text-center mr-4 p-4 h-32 w-32 rounded-lg'>
-            <p className='text-4xl text-white font-bold'>38</p>
+            <p className='text-4xl text-white font-bold'>{userDetails && userDetails.batting_inning}</p>
             <p className='text-xl text-white'>Matches</p>
           </div>
           <div className='bg-black-rgba text-center mr-4 p-4 h-32 w-32 rounded-lg'>
-            <p className='text-4xl text-white font-bold'>246</p>
+            <p className='text-4xl text-white font-bold'>{userDetails && userDetails.batting_total_runs_scored}</p>
             <p className='text-xl text-white'>Runs</p>
           </div>
           <div className='bg-black-rgba text-center mr-4 p-4 h-32 w-32 rounded-lg'>
-            <p className='text-4xl text-white font-bold'>0</p>
+            <p className='text-4xl text-white font-bold'>{userDetails && userDetails.bowling_wickets}</p>
             <p className='text-xl text-white'>Wickets</p>
           </div>
         </div>

@@ -144,3 +144,106 @@ class BallByBallCommentarySerializer(serializers.ModelSerializer):
             'bowling_economy': bowler.bowling_economy,
             'bowling_style': bowler.player_id.bowling_style,
         }
+
+
+
+# ########################################################## live serializers ################################################################
+
+
+class PlayerStatusLiveSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='player_id.first_name')
+    
+    class Meta:
+        model = MatchTeamPlayer
+        fields = [
+            'id', 'player_id', 'first_name', 'is_striker', 'is_non_striker', 'is_bowling',
+            'batting_runs_scored', 'batting_balls_faced', 'batting_fours', 'batting_sixes',
+            'batting_strike_rate', 'bowling_overs', 'bowling_runs_conceded', 'bowling_wickets',
+            'bowling_maiden_overs', 'bowling_economy'
+        ]
+
+class BallLiveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BallByBall
+        fields = [
+            'over', 'ball_in_over', 'runs', 'extras', 'extras_type', 'how_out', 'innings',
+            'onstrike', 'offstrike', 'people_involved'
+        ]
+
+class MatchLiveSerializer(serializers.ModelSerializer):
+    home_team = serializers.CharField(source='home_team.team_name')
+    away_team = serializers.CharField(source='away_team.team_name')
+    current_striker = serializers.SerializerMethodField()
+    current_non_striker = serializers.SerializerMethodField()
+    current_bowler = serializers.SerializerMethodField()
+    current_over = serializers.SerializerMethodField()
+    last_ball = serializers.SerializerMethodField()
+    last_ball_innings_1 = serializers.SerializerMethodField()
+    last_ball_innings_2 = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Match
+        fields = [
+            'id', 'home_team', 'away_team', 'current_striker', 'current_non_striker',
+            'current_bowler', 'current_over', 'last_ball', 'last_ball_innings_1', 'last_ball_innings_2',
+            'created_by', 'date', 'ground_location', 'toss_winner', 'elected_to',
+            'batting_first', 'overs', 'status', 'innings'
+        ]
+
+    def get_current_striker(self, obj):
+        try:
+            player = MatchTeamPlayer.objects.get(match_id=obj, is_striker=True)
+            return PlayerStatusLiveSerializer(player).data
+        except MatchTeamPlayer.DoesNotExist:
+            return None
+
+    def get_current_non_striker(self, obj):
+        try:
+            player = MatchTeamPlayer.objects.get(match_id=obj, is_non_striker=True)
+            return PlayerStatusLiveSerializer(player).data
+        except MatchTeamPlayer.DoesNotExist:
+            return None
+
+    def get_current_bowler(self, obj):
+        try:
+            player = MatchTeamPlayer.objects.get(match_id=obj, is_bowling=True)
+            return PlayerStatusLiveSerializer(player).data
+        except MatchTeamPlayer.DoesNotExist:
+            return None
+
+    def get_current_over(self, obj):
+        current_innings = obj.innings
+        try:
+            latest_ball = BallByBall.objects.filter(match_id=obj, innings=current_innings).order_by('-over', '-ball_in_over').first()
+            if latest_ball:
+                current_over_number = latest_ball.over
+                balls = BallByBall.objects.filter(match_id=obj, innings=current_innings, over=current_over_number).order_by('ball_in_over')
+                return BallByBallCommentarySerializer(balls, many=True).data
+            else:
+                return []
+        except BallByBall.DoesNotExist:
+            return []
+
+    def get_last_ball(self, obj):
+        current_innings = obj.innings
+        try:
+            ball = BallByBall.objects.filter(match_id=obj, innings=current_innings).order_by('-over', '-ball_in_over').first()
+            return BallLiveSerializer(ball).data
+        except BallByBall.DoesNotExist:
+            return None
+
+    def get_last_ball_innings_1(self, obj):
+        try:
+            ball = BallByBall.objects.filter(match_id=obj, innings=1).order_by('-over', '-ball_in_over').first()
+            return BallLiveSerializer(ball).data
+        except BallByBall.DoesNotExist:
+            return None
+
+    def get_last_ball_innings_2(self, obj):
+        if obj.innings < 2:
+            return None
+        try:
+            ball = BallByBall.objects.filter(match_id=obj, innings=2).order_by('-over', '-ball_in_over').first()
+            return BallLiveSerializer(ball).data
+        except BallByBall.DoesNotExist:
+            return None

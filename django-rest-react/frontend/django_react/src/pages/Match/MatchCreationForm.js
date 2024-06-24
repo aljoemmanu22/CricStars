@@ -210,6 +210,9 @@ const MatchCreationForm = () => {
     })
       .then(response => {
         console.log('Team created successfully:', response.data);
+        // Show an alert
+        alert('Team created successfully!');
+
         // Update team lists
         axios.get(baseURL + '/api/match/matches/user-teams/', {
           headers: {
@@ -456,6 +459,7 @@ const MatchCreationForm = () => {
               Team Logo
             </p>
           </div>
+
           <form onSubmit={handleTeamSubmit} className='flex flex-col items-center justify-center'>
             <div className='flex flex-col relative mt-8 w-4/5 pt-1'>
               <label 
@@ -485,6 +489,7 @@ const MatchCreationForm = () => {
               <button type="submit" className='py-1 px-3 bg-teal-500 text-white w-80'>ADD TEAM</button>
             </div>
           </form>
+
         </div>
         </>  
       }

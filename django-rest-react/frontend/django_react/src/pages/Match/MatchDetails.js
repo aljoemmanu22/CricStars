@@ -10,13 +10,14 @@ import Teams from './Teams'
 import LiveScore from './LiveScore'
 
 function MatchDetails() {
-  const [selectedSection, setSelectedSection] = useState('summary');
+  const [selectedSection, setSelectedSection] = useState('');
   const { matchId } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem('access');
   const baseURL = 'http://127.0.0.1:8000';
   const [matchData, setMatchData] = useState(null);
   const [batsfirst, setBatsFirst] = useState('')
+  const [liveMatchData, setLiveMatchData] = useState(null); // New state for live match data
 
 
   useEffect(() => {
@@ -41,7 +42,7 @@ function MatchDetails() {
       .catch((error) => {
         console.error('There was an error fetching the match details!', error);
       });
-      }, [matchId, token]);
+      }, [matchId, token, liveMatchData]);
 
   if (!matchData) {
     return <div>Loading...</div>;
@@ -53,7 +54,7 @@ function MatchDetails() {
   const renderSection = () => {
     switch (selectedSection) {
       case 'live':
-        return <LiveScore />;
+        return <LiveScore matchId={matchId} setSelectedSection={setSelectedSection} liveMatchData={liveMatchData} setLiveMatchData={setLiveMatchData} />;
       case 'summary':
         return <SummaryContent matchId={matchId}/>
       case 'scorecard':
@@ -66,8 +67,12 @@ function MatchDetails() {
         return <MVP matchId={matchId}/>
       case 'teams':
         return <Teams matchId={matchId}/>
-      default:
-        return <div>Summary Content</div>;
+        default:
+          if (match_details.status === 'live') {
+            return <LiveScore matchId={matchId} setSelectedSection={setSelectedSection} liveMatchData={liveMatchData} setLiveMatchData={setLiveMatchData} />;
+          } else if (match_details.status === 'past') {
+            return <SummaryContent matchId={matchId} />;
+          } 
     }
   };
 
@@ -85,6 +90,7 @@ function MatchDetails() {
                 <span className='h-5 p-2 rounded-2xl bg-black flex items-center justify-center text-white font-extrabold text-xs'>{match_details.status}</span>
                 </div>
               </div>
+
               <p className='mt-1 text-teal-600 pl-4'>Ground : {match_details.ground_location == 'home' ? home_team.home_ground : away_team.home_ground}, {match_details.overs} overs match , {match_details.date}</p>
               <p className='mt-2 pl-4'>Toss: {match_details.batting_first === 'home' && 
                 match_details.elected_to === 'bat'
@@ -94,29 +100,43 @@ function MatchDetails() {
                 {match_details.batting_first === 'away' && match_details.elected_to === 'bat'
                   ? `${away_team.team_name} opt to bat`
                   : `${away_team.team_name} opt to field`}
-        
               </p>
 
               <div className='flex justify-between items-center mt-3 pl-4'>
                 <p className='font-bold'>{batsfirst === 'home' ? home_team.team_name : away_team.team_name}</p>
                 <div className='flex items-center justify-center mr-5'>
-                  <p className='font-bold text-2xl mr-1'>{matchData.last_ball_innings1.total_runs}/{matchData.last_ball_innings1.total_wickets}</p>
-                  <p>({matchData.last_ball_innings1.balls === 6 ? matchData.last_ball_innings1.overs + 1 : matchData.last_ball_innings1.overs}.{matchData.last_ball_innings1.balls === 6 ? 0 : matchData.last_ball_innings1.balls})</p>
+                  <p className='font-bold text-2xl mr-1'>{matchData.last_ball_innings1 ? `${matchData.last_ball_innings1.total_runs}/${matchData.last_ball_innings1.total_wickets}` : '0/0'}</p>
+                  <p>({matchData.last_ball_innings1 ? matchData.last_ball_innings1.balls === 6 ? matchData.last_ball_innings1.overs + 1 : matchData.last_ball_innings1.overs : match_details.overs}.{matchData.last_ball_innings1 ? matchData.last_ball_innings1.balls === 6 ? 0 : matchData.last_ball_innings1.balls : '0'})</p>
                 </div>
               </div>
 
               <div className='flex justify-between items-center mt-3 pl-4'>
-                <p className='font-bold'>{batsfirst === 'home' ? home_team.team_name : away_team.team_name}</p>
+                <p className='font-bold'>{batsfirst === 'home' ? away_team.team_name : home_team.team_name}</p>
                 <div className='flex items-center justify-center mr-5'>
-                  <p className='font-bold text-2xl mr-1'>{matchData.last_ball_innings2.total_runs}/{matchData.last_ball_innings2.total_wickets}</p>
-                  <p>({matchData.last_ball_innings2.balls === 6 ? matchData.last_ball_innings2.overs + 1 : matchData.last_ball_innings2.overs}.{matchData.last_ball_innings2.balls === 6 ? 0 : matchData.last_ball_innings2.balls})</p>
+                <p className='font-bold text-2xl mr-1'>{matchData.last_ball_innings2 ? `${matchData.last_ball_innings2.total_runs}/${matchData.last_ball_innings2.total_wickets}` : '0/0'}</p>
+                  <p>({matchData.last_ball_innings2 ? matchData.last_ball_innings2.balls === 6 ? matchData.last_ball_innings2.overs + 1 : matchData.last_ball_innings2.overs : match_details.overs}.{matchData.last_ball_innings2 ? matchData.last_ball_innings2.balls === 6 ? 0 : matchData.last_ball_innings2.balls : '0'})</p>
                 </div>
               </div>
 
               <p className='my-4 pl-4'>{match_details.result}</p>
               <div className='h-12 w-full bg-slate-200 rounded-b-lg border-t flex justify-center items-center'>
                 <nav className='flex justify-around w-full'>
-                  <button className={selectedSection === 'summary' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('summary')}>Summary</button>
+                  {match_details.status === 'past' && (
+                    <button
+                      className={selectedSection === 'summary' ? 'text-teal-600' : ''}
+                      onClick={() => setSelectedSection('summary')}
+                    >
+                      Summary
+                    </button>
+                  )}
+                  {match_details.status === 'live' && (
+                    <button
+                      className={selectedSection === 'live' ? 'text-teal-600' : ''}
+                      onClick={() => setSelectedSection('live')}
+                    >
+                      Live
+                    </button>
+                  )}
                   <button className={selectedSection === 'scorecard' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('scorecard')}>Scorecard</button>
                   <button className={selectedSection === 'commentary' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('commentary')}>Commentary</button>
                   <button className={selectedSection === 'cricheros' ? 'text-teal-600' : ''} onClick={() => setSelectedSection('cricheros')}>Cricheros</button>
