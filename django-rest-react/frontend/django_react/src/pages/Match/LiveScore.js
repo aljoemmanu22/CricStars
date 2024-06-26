@@ -176,7 +176,7 @@ function LiveScore({ setSelectedSection, matchId, setLiveMatchData }) {
                   <p className='pl-4 py-2 font-semibold'>Recent :</p>
                 </div>
                 {matchData.current_over && matchData.current_over.map((ball, index) => (
-                  <div key={index} className='flex items-center justify-center mr-3'>
+                  <div key={index} className='flex items-center justify-center lg:mr-3 sm:mr-1'>
                     <p className='text-sm bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center'>
                       {ball.extras_type != ''? 
                         (ball.extras_type === 'wd' ? 'wd' :
@@ -196,7 +196,7 @@ function LiveScore({ setSelectedSection, matchId, setLiveMatchData }) {
           {/* Commentry Part */}
 
 
-          <div className='mt-3 rounded-lg'>
+          <div className='lg:mt-3 rounded-lg'>
             <div className='bg-white text-xl pl-4 py-3 rounded-t-lg'>
               <p>Commentary</p>
             </div>

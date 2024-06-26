@@ -95,7 +95,7 @@ function UserHome() {
 
       {userDetails &&
 
-        <div className='sm:w-full h-auto md:w-4/6 w-3/6 shadow border-slate-100 rounded-b-md px-4 py-3 bg-black-rgba'>
+        <div className='sm:w-full h-auto md:w-4/6 w-3/6 shadow border-slate-100 rounded-b-md px-3 lg:px4 py-3 lg:bg-black-rgba sm:bg-slate-50'>
           <div className='grid grid-cols-1 2xl:grid-cols-2 gap-4'>
 
             <div>
@@ -104,7 +104,7 @@ function UserHome() {
                 <p>No live matches available.</p>
               ) : (
                 liveMatches.map(match => (
-                  <div key={match.match.id} className='p-4 border cursor-pointer' onClick={() => navigate(`/match-details/${match.match.id}`)}>
+                  <div key={match.match.id} className='lg:p-4 border cursor-pointer' onClick={() => navigate(`/match-details/${match.match.id}`)}>
                     <div className='h-44 w-full bg-white rounded-lg'>
                       <div className='w-full border-b border-slate-300 h-1/5 flex items-center justify-center'>
                         <p className='text-center sm:text-sm'>{match.match.home_team.team_name} vs {match.match.away_team.team_name}</p>
@@ -137,7 +137,7 @@ function UserHome() {
                       </div>
                       <div className='w-full h-1/5 flex px-3 border-t border-slate-300'>
                           <div className='flex items-center'>
-                            <p className='text-sm flex text-center justify-center space-x-1'>
+                            <p className='text-sm lg:flex lg:text-center lg:justify-center space-x-1'>
                               <span className='font-extrabold'>{match.match.toss_winner}</span>
                               <span>won the toss and elected to</span>
                               <span className='font-extrabold'>{match.match.elected_to}</span>

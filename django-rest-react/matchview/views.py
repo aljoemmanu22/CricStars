@@ -1163,3 +1163,40 @@ class MatchLiveDetailView(generics.RetrieveAPIView):
         match_data = super().get(request, *args, **kwargs).data
         self.broadcast_match_update(match_data)
         return Response(match_data)
+
+
+################################# live implementation ##################################
+
+# views.py
+from django.http import JsonResponse
+import time
+import random
+import string
+import os
+from agora_token_builder import RtcTokenBuilder
+
+def start_stream(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    match.is_streaming = True
+    match.save()
+    return JsonResponse({'status': 'streaming started'})
+
+def stop_stream(request, match_id):
+    match = get_object_or_404(Match, id=match_id)
+    match.is_streaming = False
+    match.save()
+    return JsonResponse({'status': 'streaming stopped'})
+
+def generate_agora_token(request):
+    AGORA_APP_ID = os.getenv('AGORA_APP_ID')
+    AGORA_APP_CERTIFICATE = os.getenv('AGORA_APP_CERTIFICATE')
+    
+    channel_name = request.GET.get('channelName')
+    uid = 0
+    expiration_time_in_seconds = 3600
+    current_timestamp = int(time.time())
+    privilege_expired_ts = current_timestamp + expiration_time_in_seconds
+
+    token = RtcTokenBuilder.buildTokenWithUid(AGORA_APP_ID, AGORA_APP_CERTIFICATE, channel_name, uid, 1, privilege_expired_ts)
+    
+    return JsonResponse({'token': token, 'uid': uid})

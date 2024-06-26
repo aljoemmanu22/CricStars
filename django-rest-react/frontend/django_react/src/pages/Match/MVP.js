@@ -25,18 +25,18 @@ function MVP({ matchId }) {
   return (
     <div>
       <div className='flex items-center py-3 pl-3 border-b'>
-        <p className='text-2xl'>MVP (Most Valuable Player)</p>
+        <p className='lg:text-2xl'>MVP (Most Valuable Player)</p>
         <p className='rounded-full bg-slate-400 w-5 flex items-center justify-center text-white font-lg h-5 ml-3'>?</p>
       </div>
       {players.map((player, index) => (
-        <div key={player.player_id} className='flex items-center justify-between  border-b'>
+        <div key={player.player_id} className='sm:text-sm flex items-center justify-between  border-b'>
           <div className='flex items-center py-1 pl-3'>
             <div>
               <img className='pl-1 py-3 h-18 w-16' src='/images/user_profile1.png'/>
             </div>
             <div className='pl-3 pb-1'>
               <div>
-                <p className='font-bold text-lg'>{player.name}<span className=' text-base font-normal'>({player.team_name})</span></p>
+                <p className='font-bold text-lg sm:text-sm'>{player.name}<span className=' text-base font-normal'>({player.team_name})</span></p>
               </div>
               <div className='flex text-gray-500 -mb-3'>
                 <p className='w-20'>Batting</p>
@@ -54,8 +54,8 @@ function MVP({ matchId }) {
               </div>
             </div>
           </div>
-          <div className='pr-7'>
-            <p className='rounded-full text-xl bg-orange-300 w-10 h-10 flex items-center justify-center bg-opacity-55 border border-orange-700 border-spacing-2'>{rank + index}</p>
+          <div className='pr-7 sm:pr-4'>
+            <p className='rounded-full text-xl sm:text-sm bg-orange-300 w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center bg-opacity-55 border border-orange-700 border-spacing-2'>{rank + index}</p>
           </div>
         </div>
       ))}

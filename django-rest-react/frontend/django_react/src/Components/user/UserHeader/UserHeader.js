@@ -91,11 +91,11 @@ function UserHeader() {
               </a>
             </li>
           )}
-          <li className="px-1">
+          {/* <li className="px-1">
             <a href="/contact-us" className="px-2 font-sans font-semibold text-sm text-slate-600">
               CONTACT US
             </a>
-          </li>
+          </li> */}
         </ul>
         {username !== null && (
           <Link to="profile" className="hidden lg:block">
@@ -132,15 +132,15 @@ function UserHeader() {
             </div>
             <ul className="mt-8">
               <li className="py-2 border-b">
-                <a href="/live-matches" className="font-sans font-semibold text-sm text-slate-600">
-                  LIVE MATCHES
-                </a>
+                <button onClick={() => {navigate('/user-cordinator-home')}} className="font-sans font-semibold text-sm text-slate-600">
+                  Match Coordinator
+                </button>
               </li>
               {username && (
                 <li className="py-2 border-b">
-                  <a href="/past-matches" className="font-sans font-semibold text-sm text-slate-600">
+                  <button onClick={() => {navigate('/past-matches')}} className="font-sans font-semibold text-sm text-slate-600">
                     PAST MATCHES
-                  </a>
+                  </button>
                 </li>
               )}
               {username !== null && (

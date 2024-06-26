@@ -33,79 +33,79 @@ function CricHeros({ matchId }) {
       <div className='flex bg-red-700 rounded-lg'>
         <div className='w-4/6'>
           <div className='pl-4'>
-            <p className='py-3 text-white text-2xl border-b font-semibold'>PLAYER OF THE MATCH</p>
+            <p className='sm:py-2 lg:py-3 text-white text-2xl sm:text-lg border-b font-semibold'>PLAYER OF THE MATCH</p>
           </div>
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>{man_of_the_match ? man_of_the_match.name : 'N/A'}</p>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>{man_of_the_match ? man_of_the_match.name : 'N/A'}</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>{man_of_the_match ? man_of_the_match.team_name : 'N/A'}</p>
-          </div>
-
-          <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Batting</p>
-          </div>
-          <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>{man_of_the_match && `${man_of_the_match.batting_runs_scored}R ${man_of_the_match.batting_balls_faced}B  ${man_of_the_match.batting_sixes}(6S) ${man_of_the_match.batting_fours}(4S) ${man_of_the_match.batting_strikeRate}(SR)`}</p>
+            <p className='py-1 text-white text-sm sm:text-xs'>{man_of_the_match ? man_of_the_match.team_name : 'N/A'}</p>
           </div>
 
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Bowling</p>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>Batting</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 pb-3 text-white text-sm'>{man_of_the_match && `${man_of_the_match.bowling_overs}Ov ${man_of_the_match.bowling_maiden_overs}M ${man_of_the_match.bowling_runs_conceded}R ${man_of_the_match.bowling_wickets}W ${man_of_the_match.bowling_economy}EC`}</p>
+            <p className='py-1 text-white text-sm sm:text-xs'>{man_of_the_match && `${man_of_the_match.batting_runs_scored}R ${man_of_the_match.batting_balls_faced}B  ${man_of_the_match.batting_sixes}(6S) ${man_of_the_match.batting_fours}(4S) ${man_of_the_match.batting_strikeRate}(SR)`}</p>
+          </div>
+
+          <div className='pl-4'>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>Bowling</p>
+          </div>
+          <div className='pl-4'>
+            <p className='py-1 pb-3 text-white text-sm sm:text-xs'>{man_of_the_match && `${man_of_the_match.bowling_overs}Ov ${man_of_the_match.bowling_maiden_overs}M ${man_of_the_match.bowling_runs_conceded}R ${man_of_the_match.bowling_wickets}W ${man_of_the_match.bowling_economy}EC`}</p>
           </div>
         </div>
         <div className='w-2/6'>
-          <img className='pl-5 pr-5 pt-3 h-5/6 w-auto' src='/images/user_profile1.png'/>
+          <img className='pl-5 pr-5 pt-3 h-5/6 sm:h-auto w-auto' src='/images/user_profile1.png'/>
         </div>
       </div>
 
       <div className='flex bg-teal-600 rounded-lg mt-3'>
         <div className='w-4/6'>
           <div className='pl-4'>
-            <p className='py-3 text-white text-2xl border-b font-semibold'>BEST BATTER</p>
+            <p className='lg:py-3 sm:py-2 text-white text-2xl sm:text-lg border-b font-semibold'>BEST BATTER</p>
           </div>
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>{best_batter ? best_batter.name : 'N/A'}</p>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>{best_batter ? best_batter.name : 'N/A'}</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>{best_batter ? best_batter.team_name : 'N/A'}</p>
+            <p className='py-1 text-white text-sm sm:text-xs'>{best_batter ? best_batter.team_name : 'N/A'}</p>
           </div>
 
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Batting</p>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>Batting</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>{best_batter && `${best_batter.batting_runs_scored}R ${best_batter.batting_balls_faced}B  ${best_batter.batting_sixes}(6S) ${best_batter.batting_fours}(4S) ${best_batter.batting_strikeRate}(SR)`}</p>
+            <p className='py-1 text-white text-sm sm:text-xs'>{best_batter && `${best_batter.batting_runs_scored}R ${best_batter.batting_balls_faced}B  ${best_batter.batting_sixes}(6S) ${best_batter.batting_fours}(4S) ${best_batter.batting_strikeRate}(SR)`}</p>
           </div>
         </div>
         <div className='w-2/6'>
-          <img className='pl-5 pr-5 pt-3 h-5/6 w-auto' src='/images/user_profile1.png'/>
+          <img className='pl-5 pr-5 pt-3 h-5/6 w-auto sm:h-auto' src='/images/user_profile1.png'/>
         </div>
       </div>
 
       <div className='flex bg-yellow-400 rounded-lg mt-3'>
         <div className='w-4/6'>
           <div className='pl-4'>
-            <p className='py-3 text-white text-2xl border-b font-semibold'>BEST BOWLER</p>
+            <p className='lg:py-3 sm:py-2 text-white text-2xl sm:text-lg border-b font-semibold'>BEST BOWLER</p>
           </div>
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>{best_bowler ? best_bowler.name : 'N/A'}</p>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>{best_bowler ? best_bowler.name : 'N/A'}</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 text-white text-sm'>{best_bowler ? best_bowler.team_name : 'N/A'}</p>
+            <p className='py-1 text-white text-sm sm:text-xs'>{best_bowler ? best_bowler.team_name : 'N/A'}</p>
           </div>
 
           <div className='pl-4'>
-            <p className='pt-3 text-white text-lg font-semibold'>Bowling</p>
+            <p className='pt-3 text-white text-lg sm:text-sm font-semibold'>Bowling</p>
           </div>
           <div className='pl-4'>
-            <p className='py-1 pb-3 text-white text-sm'>{best_bowler && `${best_bowler.bowling_overs}Ov ${best_bowler.bowling_maiden_overs}M ${best_bowler.bowling_runs_conceded}R ${best_bowler.bowling_wickets}W ${best_bowler.bowling_economy}EC`}</p>
+            <p className='py-1 pb-3 text-white text-sm sm:text-xs'>{best_bowler && `${best_bowler.bowling_overs}Ov ${best_bowler.bowling_maiden_overs}M ${best_bowler.bowling_runs_conceded}R ${best_bowler.bowling_wickets}W ${best_bowler.bowling_economy}EC`}</p>
           </div>
         </div>
         <div className='w-2/6'>
-          <img className='pl-5 pr-5 pt-3 h-5/6 w-auto' src='/images/user_profile1.png'/>
+          <img className='pl-5 pr-5 pt-3 h-5/6 w-auto sm:h-auto' src='/images/user_profile1.png'/>
         </div>
       </div>
       

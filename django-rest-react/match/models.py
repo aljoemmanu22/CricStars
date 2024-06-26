@@ -57,6 +57,7 @@ class Match(models.Model):
 
     status = models.CharField(max_length=50, blank=True, null=True, default='scheduled')
     innings = models.IntegerField(blank=True, null=True ,default=1)
+    is_streaming = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.home_team) + ' vs ' + str(self.away_team)    

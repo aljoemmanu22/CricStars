@@ -71,6 +71,7 @@ function ScoringInterface() {
   const [isResultModalVisible, setIsResultModalVisible] = useState(false);
   const [isInningsEndModalVisible, setInningsEndModalVisible] = useState(false) 
   const [lastBall, setLastBall] = useState()
+  const [isStreaming, setIsStreaming] = useState(false);
 
   // Function to show notification
   const showNotification = (message) => {
@@ -1040,6 +1041,28 @@ function ScoringInterface() {
     setInningsEndModalVisible(false)
   }
 
+/////////////////////////////////////////////// live streaming part //////////////////////////////////////////
+
+const handleStartStream = async () => {
+  try {
+    await axios.get(`http://127.0.0.1:8000/api/start-stream/${matchId}/`);
+    setIsStreaming(true);
+  } catch (error) {
+    console.error('Failed to start streaming', error);
+  }
+};
+
+const handleStopStream = async () => {
+  try {
+    await axios.get(`http://127.0.0.1:8000/api/stop-stream/${matchId}/`);
+    setIsStreaming(false);
+  } catch (error) {
+    console.error('Failed to stop streaming', error);
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   return (
     <div className='relative bg-[url("images/ScoringBack2.png")] bg-cover bg-center h-screen'>
       {/* {console.log('striker', {strikerData} , {nonStrikerData}, {selectedBowlerData}, 'over', {over})} */}
@@ -1063,7 +1086,7 @@ function ScoringInterface() {
       
       <div className="absolute inset-0 bg-black opacity-50 z-10"></div>
       <div className="relative z-20 w-full h-full text-white">
-        <div className="flex flex-col items-center pt-32">
+        <div className="flex flex-col items-center pt-32 md:pt-10 sm:pt-10">
           <p className="text-white text-4xl flex items-center">
             {totalRuns}/{totalWickets}<span className="text-lg pl-2">({over}.{ballInOver})</span>
           </p>
@@ -1097,7 +1120,7 @@ function ScoringInterface() {
             />
           )}
 
-          <div className="w-2/6 flex">
+          <div className="lg:w-2/6 flex md:w-5/6 sm:w-5/6">
             <div className="w-1/2 flex flex-col border pl-4 pt-2 mt-20">
               <div className="flex cursor-pointer" onClick={handleStrikeChange}>
                 <img className="bg-green-700 rounded-full h-6 w-6 mr-2" src="/images/BatIcon.png" />
@@ -1118,7 +1141,7 @@ function ScoringInterface() {
             </div>
           </div>
 
-          <div className="w-2/6 flex flex-col pt-3 border">
+          <div className="lg:w-2/6 md:w-5/6 sm:w-5/6 flex flex-col pt-3 border">
             <div className="flex justify-between w-full">
               <div className="flex pl-4">
                 <img className="bg-white rounded-full h-6 w-6 mr-2" src="/images/BallIcon.png" />
@@ -1131,7 +1154,7 @@ function ScoringInterface() {
             <div className="flex flex-wrap">
               {currentOverEvents.map((event, index) => (
                 <div key={index} className="flex pl-2 py-3">
-                  <p className="w-10 h-10 bg-white rounded-full text-black flex justify-center items-center mr-3">
+                  <p className="w-10 h-10 bg-white rounded-full text-black flex justify-center items-center mr-3 md:mr-1 sm:mr-1">
                     {event.extras_type ? event.extras_type.toUpperCase() : (event.how_out ? 'OUT' : event.runs)}
                   </p>
                 </div>
@@ -1139,7 +1162,7 @@ function ScoringInterface() {
             </div>
           </div>
 
-          <div className="w-2/6 flex">
+          <div className="lg:w-2/6 md:w-5/6 sm:w-5/6 flex">
             <div className="flex flex-wrap grid-cols-3 grid-rows-3 w-3/4">
               {['0', '1', '2', '3', '4', '6', 'wd', 'nb', 'bye'].map(event => (
                 <div key={event} className="w-1/3 flex items-center justify-center border" onClick={() => handleScoreUpdate(event)}>
@@ -1148,12 +1171,19 @@ function ScoringInterface() {
               ))}
             </div>
             <div className="flex flex-col w-1/4">
-              {['undo', 'out', 'lb'].map(event => (
+              {['out', 'lb'].map(event => (
                 <div key={event} className="flex w-full items-center justify-center border" onClick={() => handleScoreUpdate(event)}>
                   <p className="text-white p-3">{event.toUpperCase()}</p>
                 </div>
               ))}
             </div>
+            {/* <div className="flex flex-col w-1/4">
+              {['undo', 'out', 'lb'].map(event => (
+                <div key={event} className="flex w-full items-center justify-center border" onClick={() => handleScoreUpdate(event)}>
+                  <p className="text-white p-3">{event.toUpperCase()}</p>
+                </div>
+              ))}
+            </div> */}
             {isWidePopupVisible && (
               <div className="popup fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
                 <div className="bg-white p-4 rounded shadow-md text-black">
@@ -1309,6 +1339,12 @@ function ScoringInterface() {
             )}
 
           </div>
+            <div>
+              <button className="p-2 mt-2 bg-green-600" onClick={handleStartStream} disabled={isStreaming}>Start Streaming</button>
+            </div>
+            <div>
+              <button className="p-2 mt-2 bg-red-600" onClick={handleStopStream} disabled={!isStreaming}>Stop Streaming</button>
+            </div>
         </div>
       </div>
 

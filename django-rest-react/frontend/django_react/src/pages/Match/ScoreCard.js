@@ -108,11 +108,11 @@ function ScoreCard( {matchId} ) {
                 </div>
               </div>
               <div className='flex'>
-                <p className='w-14'>R</p>
-                <p className='w-14'>B</p>
-                <p className='w-14'>4s</p>
-                <p className='w-14'>6s</p>
-                <p className='w-14'>SR</p>
+                <p className='w-14 sm:w-8'>R</p>
+                <p className='w-14 sm:w-8'>B</p>
+                <p className='w-14 sm:w-8'>4s</p>
+                <p className='w-14 sm:w-8'>6s</p>
+                <p className='w-14 sm:w-8'>SR</p>
               </div>
             </div>
 
@@ -129,11 +129,11 @@ function ScoreCard( {matchId} ) {
                   </div>
                 </div>
                 <div className='flex'>
-                  <p className='w-14'>{batter.batting_runs_scored}</p>
-                  <p className='w-14'>{batter.batting_balls_faced}</p>
-                  <p className='w-14'>{batter.batting_fours}</p>
-                  <p className='w-14'>{batter.batting_sixes}</p>
-                  <p className='w-14'>{batter.batting_strike_rate}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_runs_scored}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_balls_faced}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_fours}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_sixes}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_strike_rate}</p>
                 </div>
               </div>
             ))}
@@ -141,7 +141,7 @@ function ScoreCard( {matchId} ) {
 
 
             {/* Extaras */}
-            <div className='bg-white flex items-center justify-between border-b rounded-b-lg'>
+            {/* <div className='bg-white flex items-center justify-between border-b rounded-b-lg sm:hidden'>
               <div className='flex w-3/5'>
                 <div className='w-2/6'>
                   <p className='pl-4 py-2 font-semibold'>Extras</p>
@@ -153,7 +153,53 @@ function ScoreCard( {matchId} ) {
               <div className='flex'>
                 <p className='mr-64 pr-3'>{lastBallInnings1?.total_extras}</p>
               </div>
+            </div> */}
+
+            {/* Extras phone size */}
+            {/* <div className='bg-white flex items-center justify-between border-b rounded-b-lg lg:hidden'>
+              <div className='flex items-center'>
+                <p className='pl-4 py-2 font-semibold'>Extras</p>
+                <p className='pl-4 py-2 whitespace-nowrap'>(wd {lastBallInnings1?.wides}, lb {lastBallInnings1?.legbyes}, b {lastBallInnings1?.byes}, nb {lastBallInnings1?.noBalls})</p>
+              </div>
+              <div className='flex items-center mr-4'>
+                <p className='pr-3'>{lastBallInnings1?.total_extras}</p>
+              </div>
+            </div> */}
+
+            <div className='bg-white'>
+              {/* Top part (visible on lg screens and above) */}
+              <div className='hidden sm:block md:block lg:hidden'>
+                <div className='flex items-center justify-between border-b rounded-b-lg'>
+                  <div className='flex items-center'>
+                    <p className='pl-4 py-2 font-semibold'>Extras</p>
+                    <p className='pl-4 py-2 whitespace-nowrap'>(wd {lastBallInnings1?.wides}, lb {lastBallInnings1?.legbyes}, b {lastBallInnings1?.byes}, nb {lastBallInnings1?.noBalls})</p>
+                  </div>
+                  <div className='flex items-center mr-4'>
+                    <p className='pr-3'>{lastBallInnings1?.total_extras}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom part (visible on sm screens and above) */}
+              <div className='sm:hidden md:hidden lg:block'>
+                {/* Your existing code for the bottom part here */}
+                <div className='bg-white flex items-center justify-between border-b rounded-b-lg'>
+                  <div className='flex items-center'>
+                    <div className=''>
+                      <p className='pl-4 py-2 font-semibold'>Extras</p>
+                    </div>
+                    <div>
+                      <p className='pl-4 py-2'>(wd {lastBallInnings1?.wides}, lb {lastBallInnings1?.legbyes}, b {lastBallInnings1?.byes}, nb {lastBallInnings1?.noBalls})</p>
+                    </div>
+                  </div>
+                  <div className='flex'>
+                    <p className='mr-64 pr-3'>{lastBallInnings1?.total_extras}</p>
+                  </div>
+                </div>
+              </div>
             </div>
+
+
 
             {/* Yet to bat */}
             <div className='bg-white flex items-center justify-between border-b rounded-b-lg'>
@@ -188,15 +234,15 @@ function ScoreCard( {matchId} ) {
                 <p className='pl-4 py-2'>Bowlers</p>
               </div>
               <div className='flex w-full justify-end pr-3'>
-                <p className='text-center w-12'>O</p>
-                <p className='text-center w-12'>M</p>
-                <p className='text-center w-12'>R</p>
-                <p className='text-center w-12'>W</p>
-                <p className='text-center w-12'>4s</p>
-                <p className='text-center w-12'>6s</p>
-                <p className='text-center w-12'>WD</p>
-                <p className='text-center w-12'>NB</p>
-                <p className='text-center w-12'>EC</p>      
+                <p className='text-center w-12 sm:w-8'>O</p>
+                <p className='text-center w-12 sm:w-8'>M</p>
+                <p className='text-center w-12 sm:w-8'>R</p>
+                <p className='text-center w-12 sm:w-8'>W</p>
+                <p className='text-center w-12 sm:w-8'>4s</p>
+                <p className='text-center w-12 sm:w-8'>6s</p>
+                {/* <p className='text-center w-12 sm:w-8'>WD</p>
+                <p className='text-center w-12 sm:w-8'>NB</p> */}
+                <p className='text-center w-12 sm:w-8'>EC</p>      
               </div>
             </div>
 
@@ -208,15 +254,15 @@ function ScoreCard( {matchId} ) {
                   <p className='pl-4 py-2 w-full'>{bowler.player.first_name}</p>
                 </div>
                 <div className='flex justify-end pr-3'>
-                  <p className='text-center w-12'>{bowler.bowling_overs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_maiden_overs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_runs_conceded}</p>
-                  <p className='text-center w-12'>{bowler.bowling_wickets}</p>
-                  <p className='text-center w-12'>{bowler.bowling_fours}</p>
-                  <p className='text-center w-12'>{bowler.bowling_sixes}</p>
-                  <p className='text-center w-12'>{bowler.bowling_wides}</p>
-                  <p className='text-center w-12'>{bowler.bowling_noballs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_economy}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_overs}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_maiden_overs}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_runs_conceded}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_wickets}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_fours}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_sixes}</p>
+                  {/* <p className='text-center w-12 sm:w-8'>{bowler.bowling_wides}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_noballs}</p> */}
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_economy}</p>
                 </div>
               </div>
             ))}
@@ -255,11 +301,11 @@ function ScoreCard( {matchId} ) {
                 </div>
               </div>
               <div className='flex'>
-                <p className='w-14'>R</p>
-                <p className='w-14'>B</p>
-                <p className='w-14'>4s</p>
-                <p className='w-14'>6s</p>
-                <p className='w-14'>SR</p>
+                <p className='w-14 sm:w-8'>R</p>
+                <p className='w-14 sm:w-8'>B</p>
+                <p className='w-14 sm:w-8'>4s</p>
+                <p className='w-14 sm:w-8'>6s</p>
+                <p className='w-14 sm:w-8'>SR</p>
               </div>
             </div>
 
@@ -276,11 +322,11 @@ function ScoreCard( {matchId} ) {
                   </div>
                 </div>
                 <div className='flex'>
-                  <p className='w-14'>{batter.batting_runs_scored}</p>
-                  <p className='w-14'>{batter.batting_balls_faced}</p>
-                  <p className='w-14'>{batter.batting_fours}</p>
-                  <p className='w-14'>{batter.batting_sixes}</p>
-                  <p className='w-14'>{batter.batting_strike_rate}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_runs_scored}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_balls_faced}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_fours}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_sixes}</p>
+                  <p className='w-14 sm:w-8'>{batter.batting_strike_rate}</p>
                 </div>
               </div>
             ))}
@@ -333,16 +379,16 @@ function ScoreCard( {matchId} ) {
                 <p className='pl-4 py-2'>Bowlers</p>
               </div>
               <div className='flex w-full justify-end pr-3'>
-                <p className='text-center w-12'>O</p>
-                <p className='text-center w-12'>M</p>
-                <p className='text-center w-12'>R</p>
-                <p className='text-center w-12'>W</p>
-                <p className='text-center w-12'>0s</p>
-                <p className='text-center w-12'>4s</p>
-                <p className='text-center w-12'>6s</p>
-                <p className='text-center w-12'>WD</p>
-                <p className='text-center w-12'>NB</p>
-                <p className='text-center w-12'>EC</p>      
+                <p className='text-center w-12 sm:w-8'>O</p>
+                <p className='text-center w-12 sm:w-8'>M</p>
+                <p className='text-center w-12 sm:w-8'>R</p>
+                <p className='text-center w-12 sm:w-8'>W</p>
+                <p className='text-center w-12 sm:w-8'>0s</p>
+                <p className='text-center w-12 sm:w-8'>4s</p>
+                <p className='text-center w-12 sm:w-8'>6s</p>
+                {/* <p className='text-center w-12 sm:w-8'>WD</p>
+                <p className='text-center w-12 sm:w-8'>NB</p> */}
+                <p className='text-center w-12 sm:w-8'>EC</p>      
               </div>
             </div>
 
@@ -353,16 +399,16 @@ function ScoreCard( {matchId} ) {
                   <p className='pl-4 py-2 w-full'>{bowler.player.first_name}</p>
                 </div>
                 <div className='flex justify-end pr-3'>
-                  <p className='text-center w-12'>{bowler.bowling_overs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_maiden_overs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_runs_conceded}</p>
-                  <p className='text-center w-12'>{bowler.bowling_wickets}</p>
-                  <p className='text-center w-12'>{bowler.bowling_overs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_fours}</p>
-                  <p className='text-center w-12'>{bowler.bowling_sixes}</p>
-                  <p className='text-center w-12'>{bowler.bowling_wides}</p>
-                  <p className='text-center w-12'>{bowler.bowling_noballs}</p>
-                  <p className='text-center w-12'>{bowler.bowling_economy}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_overs}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_maiden_overs}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_runs_conceded}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_wickets}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_overs}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_fours}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_sixes}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_wides}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_noballs}</p>
+                  <p className='text-center w-12 sm:w-8'>{bowler.bowling_economy}</p>
                 </div>
               </div>
             ))}
